@@ -1,21 +1,31 @@
 #include "unicode.hpp"
 #include "gtest/gtest.h"
+#include <vector>
 using namespace unicode;
+using namespace std;
 
-TEST(UTF8EncoderTest, ASCIICodePoints) {
+::testing::AssertionResult encodes(char32_t codePoint, const vector<byte>& expectedCodeUnits) {
 	utf8::Encoder encoder;
 	utf8::CodeUnits codeUnits;
 	utf8::CodeUnitsCount codeUnitsCount;
 
-	encoder.encode(U'\x00', codeUnits, codeUnitsCount);
-	EXPECT_EQ(1u, codeUnitsCount);
-	EXPECT_EQ('\x00', codeUnits[0]);
+	encoder.encode(codePoint, codeUnits, codeUnitsCount);
+	if(codeUnitsCount != expectedCodeUnits.size()) {
+		return ::testing::AssertionFailure() << codeUnitsCount << " code units instead of " << expectedCodeUnits.size();
+	}
+	for(auto i = 0u; i < codeUnitsCount; i++) {
+		if(codeUnits[i] != expectedCodeUnits[i]) {
+			return ::testing::AssertionFailure() << "code unit at position " << i <<
+			     " is 0x" << hex << (int)codeUnits[i] << " instead"
+			     " of 0x" << hex << (int)expectedCodeUnits[i];
+		}
+	}
 
-	encoder.encode(U'\u0020', codeUnits, codeUnitsCount);
-	EXPECT_EQ(1u, codeUnitsCount);
-	EXPECT_EQ('\x20', codeUnits[0]);
+	return ::testing::AssertionSuccess();
+}
 
-	encoder.encode(U'\u007F', codeUnits, codeUnitsCount);
-	EXPECT_EQ(1u, codeUnitsCount);
-	EXPECT_EQ('\x7F', codeUnits[0]);
+TEST(UTF8EncoderTest, ASCIICodePoints) {
+	EXPECT_TRUE(encodes(U'\x00', {'\x00'}));
+	EXPECT_TRUE(encodes(U'\u0020', {'\x20'}));
+	EXPECT_TRUE(encodes(U'\u007F', {'\x7F'}));
 }
