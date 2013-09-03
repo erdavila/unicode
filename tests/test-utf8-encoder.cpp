@@ -70,3 +70,17 @@ TEST(UTF8EncoderTest, CodePointsEncodedToThreeBytes) {
 	// 1111|1111 11|111111 -> 1110|1111, 10|111111, 10|111111
 	EXPECT_TRUE(encodes(U'\uFFFF', bytes{'\xEF', '\xBF', '\xBF'}));
 }
+
+TEST(UTF8EncoderTest, CodePointsEncodedToFourBytes) {
+	// ---000|01 0000|0000 00|000000 -> 11110|000, 10|010000, 10|000000, 10|000000
+	EXPECT_TRUE(encodes(U'\U00010000', bytes{'\xF0', '\x90', '\x80', '\x80'}));
+
+	// ---000|01 1101|0001 00|011110 -> 11110|000, 10|011101, 10|000100, 10|011110
+	EXPECT_TRUE(encodes(U'\U0001D11E', bytes{'\xF0', '\x9D', '\x84', '\x9E'}));
+
+	// ---000|10 0100|1011 01|100010 -> 11110|000, 10|100100, 10|101101, 10|100010
+	EXPECT_TRUE(encodes(U'\U00024B62', bytes{'\xF0', '\xA4', '\xAD', '\xA2'}));
+
+	// ---100|00 1111|1111 11|111111 -> 11110|100, 10|001111, 10|111111, 10|111111
+	EXPECT_TRUE(encodes(U'\U0010FFFF', bytes{'\xF4', '\x8F', '\xBF', '\xBF'}));
+}

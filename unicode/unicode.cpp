@@ -12,13 +12,20 @@ void utf8::Encoder::encode(char32_t ch, CodeUnits& codeUnits, CodeUnitsCount& co
 		codeUnitsCount = 2;
 		codeUnits[1] = (ch & 0x3F/*00111111*/) | 0x80/*10000000*/;
 		codeUnits[0] = (ch >> 6) | 0xC0/*11000000*/;
-	} else {
+	} else if(ch <= 0xFFFF) {
 		codeUnitsCount = 3;
 		for(int i = codeUnitsCount - 1; i > 0; i--) {
 			codeUnits[i] = (ch & 0x3F/*00111111*/) | 0x80/*10000000*/;
 			ch >>= 6;
 		}
 		codeUnits[0] = ch | 0xE0/*11100000*/;
+	} else {
+		codeUnitsCount = 4;
+		for(int i = codeUnitsCount - 1; i > 0; i--) {
+			codeUnits[i] = (ch & 0x3F/*00111111*/) | 0x80/*10000000*/;
+			ch >>= 6;
+		}
+		codeUnits[0] = ch | 0xF0/*11110000*/;
 	}
 }
 
