@@ -1,0 +1,21 @@
+What can be found in a sequence of...
+	char:
+		Unicode code points encoded in UTF-32BE bytes
+		Unicode code points encoded in UTF-32LE bytes
+		Unicode code points encoded in UTF-16BE bytes
+			which may include:
+				BMP code points encoded in UCS-2BE bytes
+		Unicode code points encoded in UTF-16LE bytes
+			which may include:
+				BMP code points encoded in UCS-2LE bytes
+		Unicode code points encoded in UTF-8 bytes
+			which may include:
+				ASCII code points encoded in ASCII bytes
+
+	char16_t:
+		Unicode code points encoded in UTF-16 code units
+			which may include:
+				BMP code points encoded in UCS-2 code units
+
+	char32_t:
+		Unicode code points encoded in UTF-32 code units
