@@ -18,8 +18,8 @@ using namespace std;
 	for(auto i = 0u; i < codeUnitsCount; i++) {
 		if(codeUnits[i] != expectedCodeUnits[i]) {
 			return ::testing::AssertionFailure() << "code unit at position " << i <<
-			     " is 0x" << hex << (int)codeUnits[i] << " instead"
-			     " of 0x" << hex << (int)expectedCodeUnits[i];
+			     " is " << (int)codeUnits[i] << " instead"
+			     " of " << (int)expectedCodeUnits[i];
 		}
 	}
 	return ::testing::AssertionSuccess();
@@ -55,4 +55,18 @@ TEST(UTF8EncoderTest, CodePointsEncodedToTwoBytes) {
 
 	// -----|111 11|111111 -> 110|11111, 10|111111
 	EXPECT_TRUE(encodes(U'\u07FF', bytes{'\xDF', '\xBF'}));
+}
+
+TEST(UTF8EncoderTest, CodePointsEncodedToThreeBytes) {
+	// 0000|1000 00|000000 -> 1110|0000, 10|100000, 10|000000
+	EXPECT_TRUE(encodes(U'\u0800', bytes{'\xE0', '\xA0', '\x80'}));
+
+	// 0010|0000 10|101100 -> 1110|0010, 10|000010, 10|101100
+	EXPECT_TRUE(encodes(U'\u20AC', bytes{'\xE2', '\x82', '\xAC'}));
+
+	// 1111|1110 11|111111 -> 1110|1111, 10|111011, 10|111111
+	EXPECT_TRUE(encodes(U'\uFEFF', bytes{'\xEF', '\xBB', '\xBF'}));
+
+	// 1111|1111 11|111111 -> 1110|1111, 10|111111, 10|111111
+	EXPECT_TRUE(encodes(U'\uFFFF', bytes{'\xEF', '\xBF', '\xBF'}));
 }
