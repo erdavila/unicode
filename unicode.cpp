@@ -4,8 +4,9 @@
 namespace unicode {
 
 
-void utf8::Encoder::encode(char32_t, CodeUnits&, CodeUnitsCount&) {
-	;
+void utf8::Encoder::encode(char32_t ch, CodeUnits& codeUnits, CodeUnitsCount& codeUnitsCount) {
+	codeUnitsCount = 1;
+	codeUnits[0] = ch;
 }
 
 char32_t utf8::Decoder::decode(CodeUnit) {

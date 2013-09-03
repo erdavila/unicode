@@ -1,4 +1,5 @@
-OBJS := test.o unicode.o
+OBJS := test-utf8-encoder.o unicode.o
+EXE  := test-unicode
 
 GTEST_ROOT := gtest-1.7.0
 CXXFLAGS := -Wall -std=c++11 -I $(GTEST_ROOT) -I $(GTEST_ROOT)/include
@@ -9,18 +10,22 @@ LINK     = g++ $(CXXFLAGS) $+ -o $@
 
 
 .PHONY: all
-all: test
+all: $(EXE)
 
 .PHONY: clean
 clean:
-	rm -rf test test.exe *.o *.d
+	rm -rf $(EXE) *.o *.d
+
+.PHONY: test
+test: $(EXE)
+	./$<
 
 
 %.o: %.cpp
 	$(MAKEDEPS)
 	$(COMPILE)
 
-test: $(OBJS) $(GTEST_ROOT)/make/gtest_main.a
+$(EXE): $(OBJS) $(GTEST_ROOT)/make/gtest_main.a
 	$(LINK) -lpthread
 
 
