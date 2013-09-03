@@ -1,5 +1,6 @@
 #include "unicode/unicode.hpp"
 #include "gtest/gtest.h"
+#include <initializer_list>
 #include <vector>
 using namespace unicode;
 using namespace std;
@@ -10,6 +11,7 @@ using namespace std;
 	utf8::CodeUnitsCount codeUnitsCount;
 
 	encoder.encode(codePoint, codeUnits, codeUnitsCount);
+
 	if(codeUnitsCount != expectedCodeUnits.size()) {
 		return ::testing::AssertionFailure() << codeUnitsCount << " code units instead of " << expectedCodeUnits.size();
 	}
@@ -20,12 +22,37 @@ using namespace std;
 			     " of 0x" << hex << (int)expectedCodeUnits[i];
 		}
 	}
-
 	return ::testing::AssertionSuccess();
 }
 
+struct bytes : vector<byte> {
+	bytes(initializer_list<char> lst) : vector<byte>(lst.begin(), lst.end()) {}
+};
+
 TEST(UTF8EncoderTest, ASCIICodePoints) {
-	EXPECT_TRUE(encodes(U'\x00', {'\x00'}));
-	EXPECT_TRUE(encodes(U'\u0020', {'\x20'}));
-	EXPECT_TRUE(encodes(U'\u007F', {'\x7F'}));
+	// -|0000000 -> 0|0000000
+	EXPECT_TRUE(encodes(U'\x00', bytes{'\x00'}));
+
+	// -|0100000 -> 0|0100000
+	EXPECT_TRUE(encodes(U'\u0020', bytes{'\x20'}));
+
+	// -|0100100 -> 0|0100100
+	EXPECT_TRUE(encodes(U'\u0024', bytes{'\x24'}));
+
+	// -|1111111 -> 0|1111111
+	EXPECT_TRUE(encodes(U'\u007F', bytes{'\x7F'}));
+}
+
+TEST(UTF8EncoderTest, CodePointsEncodedToTwoBytes) {
+	// -----|000 10|000000 -> 110|00010, 10|000000
+	EXPECT_TRUE(encodes(U'\u0080', bytes{'\xC2', '\x80'}));
+
+	// -----|000 10|100010 -> 110|00010, 10|100010
+	EXPECT_TRUE(encodes(U'\u00A2', bytes{'\xC2', '\xA2'}));
+
+	// -----|010 10|101010 -> 110|01010, 10|101010
+	EXPECT_TRUE(encodes(U'\u02AA', bytes{'\xCA', '\xAA'}));
+
+	// -----|111 11|111111 -> 110|11111, 10|111111
+	EXPECT_TRUE(encodes(U'\u07FF', bytes{'\xDF', '\xBF'}));
 }
