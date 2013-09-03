@@ -1,4 +1,4 @@
-#include "unicode.hpp"
+#include "unicode/unicode.hpp"
 #include "gtest/gtest.h"
 #include <vector>
 using namespace unicode;
