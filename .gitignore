@@ -2,3 +2,6 @@
 *.exe
 *.o
 test
+
+gtest-*/make/gtest_main.a
+gtest-*/make/sample1_unittest

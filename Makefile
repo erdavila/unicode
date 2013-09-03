@@ -1,6 +1,7 @@
 OBJS := test.o unicode.o
 
-CXXFLAGS := -Wall -std=c++11
+GTEST_ROOT := gtest-1.7.0
+CXXFLAGS := -Wall -std=c++11 -I $(GTEST_ROOT) -I $(GTEST_ROOT)/include
 
 MAKEDEPS = g++ $(CXXFLAGS) -MM $< -o $(@:.o=.d) -MT $@ -MP
 COMPILE  = g++ $(CXXFLAGS) -c  $< -o $@
@@ -19,8 +20,8 @@ clean:
 	$(MAKEDEPS)
 	$(COMPILE)
 
-test: $(OBJS)
-	$(LINK)
+test: $(OBJS) $(GTEST_ROOT)/make/gtest_main.a
+	$(LINK) -lpthread
 
 
 -include $(OBJS:.o=.d)
