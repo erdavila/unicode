@@ -7,7 +7,7 @@ namespace unicode {
 namespace /*unnamed*/ {
 	namespace utf8_impl {
 		enum DecodeState {
-			BEGIN, LEADING2, LEADING3, LEADING4
+			BEGIN, TWO_BYTES, THREE_BYTES, FOUR_BYTES
 		};
 
 		enum class ByteType {
@@ -30,8 +30,19 @@ namespace /*unnamed*/ {
 				NOT_IMPLEMENTED
 			}
 		}
+
+		char32_t minCodePoint(int state) {
+			switch(state) {
+			default:
+			case BEGIN:       return U'\u0000';
+			case TWO_BYTES:   return U'\u0080';
+			case THREE_BYTES: return U'\u0800';
+			case FOUR_BYTES:  return U'\U00010000';
+			}
+		}
 	}
 }
+
 
 void utf8::Encoder::encode(char32_t ch, CodeUnits& codeUnits, CodeUnitsCount& codeUnitsCount) {
 	byte leadingByteMask;
@@ -63,49 +74,33 @@ char32_t utf8::Decoder::decode(CodeUnit codeUnit) {
 	ByteType type = byteType(codeUnit);
 	char32_t codePoint = PartiallyDecoded;
 
-	switch(state) {
-	case BEGIN:
+	if(state == BEGIN) {
 		if(type == ByteType::ASCII) {
-			return codeUnit;
+			codePoint = codeUnit & 0x7F/*0-------*/;
 		} else if(type == ByteType::LEADING2) {
 			decoding = codeUnit & 0x1F/*110-----*/;
 			pending = 1;
-			state = LEADING2;
+			state = TWO_BYTES;
 		} else if(type == ByteType::LEADING3) {
 			decoding = codeUnit & 0x0F/*1110----*/;
 			pending = 2;
-			state = LEADING3;
+			state = THREE_BYTES;
 		} else if(type == ByteType::LEADING4) {
 			decoding = codeUnit & 0x07/*11110---*/;
 			pending = 3;
-			state = LEADING4;
+			state = FOUR_BYTES;
 		} else {
 			NOT_IMPLEMENTED;
 		}
-		break;
-	case LEADING2:
-	case LEADING3:
-	case LEADING4:
+	} else {
 		if(type == ByteType::CONTINUATION) {
 			decoding = (decoding << 6) | (codeUnit & 0x3F/*10------*/);
 			if(--pending == 0) {
 				codePoint = decoding;
-				char32_t minNonOverlongCodePoint = U'\u0000';
-				switch(state) {
-				case LEADING2:
-					minNonOverlongCodePoint = U'\u0080';
-					break;
-				case LEADING3:
-					minNonOverlongCodePoint = U'\u0800';
-					break;
-				case LEADING4:
-					if(codePoint > 0x10FFFF) {
-						throw InvalidCodePoint(codePoint);
-					}
-					minNonOverlongCodePoint = U'\U00010000';
-					break;
+				if(state == FOUR_BYTES  &&  codePoint > 0x10FFFF) {
+					throw InvalidCodePoint(codePoint);
 				}
-				if(codePoint < minNonOverlongCodePoint) {
+				if(codePoint < minCodePoint(state)) {
 					throw OverlongEncoding(codePoint);
 				}
 				state = BEGIN;
@@ -113,10 +108,6 @@ char32_t utf8::Decoder::decode(CodeUnit codeUnit) {
 		} else {
 			NOT_IMPLEMENTED
 		}
-		break;
-	default:
-		NOT_IMPLEMENTED;
-		break;
 	}
 
 	return codePoint;
