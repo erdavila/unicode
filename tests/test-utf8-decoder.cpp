@@ -51,3 +51,17 @@ TEST(UTF8DecoderTest, CodePointsEncodedToTwoBytes) {
 	// 110|11111, 10|111111 -> -----|111 11|111111
 	EXPECT_TRUE(decodes(bytes{'\xDF', '\xBF'}, U'\u07FF'));
 }
+
+TEST(UTF8DecoderTest, CodePointsEncodedToThreeBytes) {
+	// 1110|0000, 10|100000, 10|000000 -> 0000|1000 00|000000
+	EXPECT_TRUE(decodes(bytes{'\xE0', '\xA0', '\x80'}, U'\u0800'));
+
+	// 1110|0010, 10|000010, 10|101100 -> 0010|0000 10|101100
+	EXPECT_TRUE(decodes(bytes{'\xE2', '\x82', '\xAC'}, U'\u20AC'));
+
+	// 1110|1111, 10|111011, 10|111111 -> 1111|1110 11|111111
+	EXPECT_TRUE(decodes(bytes{'\xEF', '\xBB', '\xBF'}, U'\uFEFF'));
+
+	// 1110|1111, 10|111111, 10|111111 -> 1111|1111 11|111111
+	EXPECT_TRUE(decodes(bytes{'\xEF', '\xBF', '\xBF'}, U'\uFFFF'));
+}
