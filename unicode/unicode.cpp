@@ -7,15 +7,12 @@ namespace unicode {
 namespace /*unnamed*/ {
 	namespace utf8_impl {
 		enum DecodeState {
-			BEGIN,
-			LEADING2,
-			LEADING3
+			BEGIN, LEADING2, LEADING3, LEADING4
 		};
 
 		enum class ByteType {
-			ASCII,
-			CONTINUATION,
-			LEADING2, LEADING3
+			ASCII, CONTINUATION,
+			LEADING2, LEADING3, LEADING4
 		};
 
 		ByteType byteType(utf8::CodeUnit codeUnit) {
@@ -27,6 +24,8 @@ namespace /*unnamed*/ {
 				return ByteType::LEADING2;
 			} else if(codeUnit >> 4 == 0x0E/*1110----*/) {
 				return ByteType::LEADING3;
+			} else if(codeUnit >> 3 == 0x1E/*11110---*/) {
+				return ByteType::LEADING4;
 			} else {
 				NOT_IMPLEMENTED
 			}
@@ -76,12 +75,17 @@ char32_t utf8::Decoder::decode(CodeUnit codeUnit) {
 			decoding = codeUnit & 0x0F/*1110----*/;
 			pending = 2;
 			state = LEADING3;
+		} else if(type == ByteType::LEADING4) {
+			decoding = codeUnit & 0x07/*11110---*/;
+			pending = 3;
+			state = LEADING4;
 		} else {
 			NOT_IMPLEMENTED;
 		}
 		break;
 	case LEADING2:
 	case LEADING3:
+	case LEADING4:
 		if(type == ByteType::CONTINUATION) {
 			decoding = (decoding << 6) | (codeUnit & 0x3F/*10------*/);
 			if(--pending == 0) {
