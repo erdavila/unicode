@@ -1,18 +1,7 @@
-#include "unicode/unicode.hpp"
 #include "gtest/gtest.h"
-#include <initializer_list>
-#include <sstream>
-#include <vector>
+#include "test.hpp"
 using namespace unicode;
 using namespace std;
-
-string hex(unsigned long value, size_t width) {
-	ostringstream ostrs;
-	ostrs.width(width);
-	ostrs.fill('0');
-	ostrs << hex << uppercase << value;
-	return ostrs.str();
-}
 
 ::testing::AssertionResult encodes(char32_t codePoint, const vector<byte>& expectedCodeUnits) {
 	utf8::Encoder encoder;
@@ -27,16 +16,12 @@ string hex(unsigned long value, size_t width) {
 	for(auto i = 0u; i < codeUnitsCount; i++) {
 		if(codeUnits[i] != expectedCodeUnits[i]) {
 			return ::testing::AssertionFailure() << "code unit at position " << i <<
-			     " is 0x" << hex(codeUnits[i], 2) << " instead"
-			     " of 0x" << hex(expectedCodeUnits[i], 2);
+			     " is 0x" << to_hex(codeUnits[i], 2) << " instead"
+			     " of 0x" << to_hex(expectedCodeUnits[i], 2);
 		}
 	}
 	return ::testing::AssertionSuccess();
 }
-
-struct bytes : vector<byte> {
-	bytes(initializer_list<char> lst) : vector<byte>(lst.begin(), lst.end()) {}
-};
 
 TEST(UTF8EncoderTest, ASCIICodePoints) {
 	// -|0000000 -> 0|0000000
@@ -104,7 +89,7 @@ TEST(UTF8EncoderTest, CodePointsEncodedToFourBytes) {
 		return ::testing::AssertionFailure() << "Exception not thrown";
 	} catch(utf8::InvalidCodePoint& e) {
 		if(e.codePoint != codePoint) {
-			return ::testing::AssertionFailure() << "Wrong code point in exception: U+" << hex(e.codePoint, 8);
+			return ::testing::AssertionFailure() << "Wrong code point in exception: U+" << to_hex(e.codePoint, 4);
 		}
 		return ::testing::AssertionSuccess() << "Exception thrown: " << e.what();
 	}

@@ -4,6 +4,33 @@
 namespace unicode {
 
 
+namespace /*unnamed*/ {
+	namespace utf8_impl {
+		enum DecodeState {
+			BEGIN,
+			LEADING2
+		};
+
+		enum class ByteType {
+			ASCII,
+			CONTINUATION,
+			LEADING2
+		};
+
+		ByteType byteType(utf8::CodeUnit codeUnit) {
+			if(codeUnit >> 7 == 0x00/*0-------*/) {
+				return ByteType::ASCII;
+			} else if(codeUnit >> 6 == 0x02/*10------*/) {
+				return ByteType::CONTINUATION;
+			} else if(codeUnit >> 5 == 0x06/*110-----*/) {
+				return ByteType::LEADING2;
+			} else {
+				NOT_IMPLEMENTED
+			}
+		}
+	}
+}
+
 void utf8::Encoder::encode(char32_t ch, CodeUnits& codeUnits, CodeUnitsCount& codeUnitsCount) {
 	byte leadingByteMask;
 	if(ch <= 0x7F) {
@@ -30,8 +57,41 @@ void utf8::Encoder::encode(char32_t ch, CodeUnits& codeUnits, CodeUnitsCount& co
 }
 
 char32_t utf8::Decoder::decode(CodeUnit codeUnit) {
-	return codeUnit;
+	using namespace utf8_impl;
+	ByteType type = byteType(codeUnit);
+	char32_t codePoint = PartiallyDecoded;
+
+	switch(state) {
+	case BEGIN:
+		if(type == ByteType::ASCII) {
+			return codeUnit;
+		} else if(type == ByteType::LEADING2) {
+			decoding = codeUnit & 0x1F/*110-----*/;
+			pending = 1;
+			state = LEADING2;
+		} else {
+			NOT_IMPLEMENTED;
+		}
+		break;
+	case LEADING2:
+		if(type == ByteType::CONTINUATION) {
+			decoding = (decoding << 6) | (codeUnit & 0x3F/*10------*/);
+			if(--pending == 0) {
+				state = BEGIN;
+				codePoint = decoding;
+			}
+		} else {
+			NOT_IMPLEMENTED
+		}
+		break;
+	default:
+		NOT_IMPLEMENTED;
+		break;
+	}
+
+	return codePoint;
 }
+
 
 void utf32::Encoder::encode(char32_t, CodeUnits&, CodeUnitsCount&) {
 	NOT_IMPLEMENTED

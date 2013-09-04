@@ -40,7 +40,7 @@ struct Encoding {
 	using CodeUnit = CodeUnit_;
 	enum { MaxCodeUnitsPerCodePoint = MaxCodeUnitsPerCodePoint_ };
 	using CodeUnits = CodeUnit[MaxCodeUnitsPerCodePoint];
-	enum : char32_t { Partial = 0xFFFFFFFF };
+	enum : char32_t { PartiallyDecoded = 0xFFFFFFFF };
 	using CodeUnitsCount = ::unicode::CodeUnitsCount;
 	using InvalidCodePoint = ::unicode::InvalidCodePoint;
 
@@ -85,6 +85,10 @@ struct utf8 : public Encoding<byte, 4> {
 	class Decoder : public EncodingBase::DecoderBase<Decoder> {
 	public:
 		char32_t decode(CodeUnit);
+	private:
+		int state = 0;
+		int pending;
+		char32_t decoding;
 	};
 };
 
