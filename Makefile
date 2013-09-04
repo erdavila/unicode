@@ -1,4 +1,5 @@
-OBJS := tests/test-utf8-encoder.o unicode/unicode.o
+SRCS := $(wildcard tests/*.cpp unicode/*.cpp)
+OBJS := $(SRCS:.cpp=.o)
 EXE  := tests/test-unicode
 
 DEPS := $(OBJS:.o=.d)

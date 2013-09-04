@@ -29,16 +29,16 @@ void utf8::Encoder::encode(char32_t ch, CodeUnits& codeUnits, CodeUnitsCount& co
 	codeUnits[0] = ch | leadingByteMask;
 }
 
-char32_t utf8::Decoder::decode(CodeUnit) {
-	return Partial;
+char32_t utf8::Decoder::decode(CodeUnit codeUnit) {
+	return codeUnit;
 }
 
 void utf32::Encoder::encode(char32_t, CodeUnits&, CodeUnitsCount&) {
-	;
+	NOT_IMPLEMENTED
 }
 
 char32_t utf32::Decoder::decode(CodeUnit) {
-	return Partial;
+	NOT_IMPLEMENTED
 }
 
 
