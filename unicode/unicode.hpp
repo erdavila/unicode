@@ -2,10 +2,37 @@
 #define UNICODE_HPP_
 
 
+#include <sstream>
+#include <stdexcept>
+#include <string>
+#include <utility>
+#include <cassert> // TEMPORARY!!!
+#define NOT_TESTED { assert(!"not tested"); } // TEMPORARY!!!
+#define NOT_IMPLEMENTED { assert(!"not implemented"); } // TEMPORARY!!!
+
+
 namespace unicode {
 
 using byte = unsigned char;
 using CodeUnitsCount = unsigned int;
+
+
+class Exception : public std::logic_error {
+public:
+	Exception(const std::string& message) : std::logic_error(message) {}
+};
+
+class InvalidCodePoint : public Exception {
+public:
+	char32_t codePoint;
+	InvalidCodePoint(char32_t codePoint) : Exception(msg(codePoint)), codePoint(codePoint) {}
+private:
+	static std::string msg(char32_t codePoint) {
+		std::ostringstream ostrs;
+		ostrs << "Invalid code point U+" << std::hex << codePoint;
+		return ostrs.str();
+	}
+};
 
 
 template <typename CodeUnit_, unsigned int MaxCodeUnitsPerCodePoint_>
@@ -15,6 +42,7 @@ struct Encoding {
 	using CodeUnits = CodeUnit[MaxCodeUnitsPerCodePoint];
 	enum : char32_t { Partial = 0xFFFFFFFF };
 	using CodeUnitsCount = ::unicode::CodeUnitsCount;
+	using InvalidCodePoint = ::unicode::InvalidCodePoint;
 
 	class Encoder {
 	public:
