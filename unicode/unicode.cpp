@@ -5,30 +5,28 @@ namespace unicode {
 
 
 void utf8::Encoder::encode(char32_t ch, CodeUnits& codeUnits, CodeUnitsCount& codeUnitsCount) {
+	byte leadingByteMask;
 	if(ch <= 0x7F) {
 		codeUnitsCount = 1;
-		codeUnits[0] = ch;
+		leadingByteMask = 0x00/*0-------*/;
 	} else if(ch <= 0x07FF) {
 		codeUnitsCount = 2;
-		codeUnits[1] = (ch & 0x3F/*00111111*/) | 0x80/*10000000*/;
-		codeUnits[0] = (ch >> 6) | 0xC0/*11000000*/;
+		leadingByteMask = 0xC0/*110-----*/;
 	} else if(ch <= 0xFFFF) {
 		codeUnitsCount = 3;
-		for(int i = codeUnitsCount - 1; i > 0; i--) {
-			codeUnits[i] = (ch & 0x3F/*00111111*/) | 0x80/*10000000*/;
-			ch >>= 6;
-		}
-		codeUnits[0] = ch | 0xE0/*11100000*/;
+		leadingByteMask = 0xE0/*1110----*/;
 	} else if(ch <= 0x10FFFF) {
 		codeUnitsCount = 4;
-		for(int i = codeUnitsCount - 1; i > 0; i--) {
-			codeUnits[i] = (ch & 0x3F/*00111111*/) | 0x80/*10000000*/;
-			ch >>= 6;
-		}
-		codeUnits[0] = ch | 0xF0/*11110000*/;
+		leadingByteMask = 0xF0/*11110---*/;
 	} else {
 		throw InvalidCodePoint(ch);
 	}
+
+	for(int i = codeUnitsCount - 1; i > 0; i--) {
+		codeUnits[i] = (ch & 0x3F/*00111111*/) | 0x80/*10------*/;
+		ch >>= 6;
+	}
+	codeUnits[0] = ch | leadingByteMask;
 }
 
 char32_t utf8::Decoder::decode(CodeUnit) {
