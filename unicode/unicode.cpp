@@ -90,11 +90,23 @@ char32_t utf8::Decoder::decode(CodeUnit codeUnit) {
 			decoding = (decoding << 6) | (codeUnit & 0x3F/*10------*/);
 			if(--pending == 0) {
 				codePoint = decoding;
+				char32_t minNonOverlongCodePoint = U'\u0000';
 				switch(state) {
+				case LEADING2:
+					minNonOverlongCodePoint = U'\u0080';
+					break;
+				case LEADING3:
+					minNonOverlongCodePoint = U'\u0800';
+					break;
 				case LEADING4:
 					if(codePoint > 0x10FFFF) {
 						throw InvalidCodePoint(codePoint);
 					}
+					minNonOverlongCodePoint = U'\U00010000';
+					break;
+				}
+				if(codePoint < minNonOverlongCodePoint) {
+					throw OverlongEncoding(codePoint);
 				}
 				state = BEGIN;
 			}

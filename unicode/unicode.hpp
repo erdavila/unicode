@@ -22,16 +22,26 @@ public:
 	Exception(const std::string& message) : std::logic_error(message) {}
 };
 
-class InvalidCodePoint : public Exception {
+class CodePointException : public Exception {
 public:
 	char32_t codePoint;
-	InvalidCodePoint(char32_t codePoint) : Exception(msg(codePoint)), codePoint(codePoint) {}
+	CodePointException(const char* problem, char32_t codePoint) : Exception(msg(problem, codePoint)), codePoint(codePoint) {}
 private:
-	static std::string msg(char32_t codePoint) {
+	static std::string msg(const char* problem, char32_t codePoint) {
 		std::ostringstream ostrs;
-		ostrs << "Invalid code point U+" << std::hex << codePoint;
+		ostrs << problem << " U+" << std::hex << codePoint;
 		return ostrs.str();
 	}
+};
+
+class InvalidCodePoint : public CodePointException {
+public:
+	InvalidCodePoint(char32_t codePoint) : CodePointException("Invalid code point", codePoint) {}
+};
+
+class OverlongEncoding : public CodePointException {
+public:
+	OverlongEncoding(char32_t codePoint) : CodePointException("Overlong encoding of code point", codePoint) {}
 };
 
 
@@ -43,6 +53,7 @@ struct Encoding {
 	enum : char32_t { PartiallyDecoded = 0xFFFFFFFF };
 	using CodeUnitsCount = ::unicode::CodeUnitsCount;
 	using InvalidCodePoint = ::unicode::InvalidCodePoint;
+	using OverlongEncoding = ::unicode::OverlongEncoding;
 
 	class Encoder {
 	public:
