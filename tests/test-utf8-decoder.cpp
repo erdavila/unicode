@@ -12,7 +12,7 @@ TEST(UTF8DecoderTest, ASCIICodePoints) {
 	EXPECT_EQ(U'\u007F', decoder.decode('\x7F'));
 }
 
-::testing::AssertionResult decodes(vector<byte> codeUnits, char32_t expectedCodePoint) {
+::testing::AssertionResult decodes(const vector<byte>& codeUnits, char32_t expectedCodePoint) {
 	utf8::Decoder decoder;
 
 	const auto lastIndex = codeUnits.size() - 1;
@@ -78,4 +78,39 @@ TEST(UTF8DecoderTest, CodePointsEncodedToFourBytes) {
 
 	// 11110|100, 10|001111, 10|111111, 10|111111 -> ---100|00 1111|1111 11|111111
 	EXPECT_TRUE(decodes(bytes{'\xF4', '\x8F', '\xBF', '\xBF'}, U'\U0010FFFF'));
+}
+
+::testing::AssertionResult invalidCodePointDecoded(const vector<byte>& codeUnits, char32_t invalidCodePoint) {
+	utf8::Decoder decoder;
+
+	auto lastIndex = codeUnits.size() - 1;
+	for(auto index = 0u; index < lastIndex; index++) {
+		byte codeUnit = codeUnits[index];
+		char32_t codePoint = decoder.decode(codeUnit);
+		if(codePoint != utf8::PartiallyDecoded) {
+			return ::testing::AssertionFailure()
+			       << "expected partially decoded code point but got U+" << to_hex(codePoint,4)
+			       << " at index " << index;
+		}
+	}
+
+	try {
+		char32_t codePoint = decoder.decode(codeUnits[lastIndex]);
+		return ::testing::AssertionFailure()
+		       << "returned code point U+" << to_hex(codePoint, 4)
+		       << " instead of throwing";
+	} catch(utf8::InvalidCodePoint& e) {
+		if(e.codePoint != invalidCodePoint) {
+			return ::testing::AssertionFailure() << "Wrong code point in exception: U+" << to_hex(e.codePoint, 4);
+		}
+		return ::testing::AssertionSuccess() << "Exception thrown: " << e.what();
+	}
+}
+
+TEST(UTF8DecoderTest, InvalidCodePoints) {
+	// 11110|100, 10|010000, 10|000000, 10|000000 -> ---100|01 0000|0000 00|000000
+	EXPECT_TRUE(invalidCodePointDecoded(bytes{'\xF4', '\x90', '\x80', '\x80'}, U'\U00110000'));
+
+	// 11110|111, 10|111111, 10|111111, 10|111111 -> ---111|11 1111|1111 11|111111
+	EXPECT_TRUE(invalidCodePointDecoded(bytes{'\xF7', '\xBF', '\xBF', '\xBF'}, U'\U001FFFFF'));
 }

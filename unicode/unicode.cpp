@@ -89,8 +89,14 @@ char32_t utf8::Decoder::decode(CodeUnit codeUnit) {
 		if(type == ByteType::CONTINUATION) {
 			decoding = (decoding << 6) | (codeUnit & 0x3F/*10------*/);
 			if(--pending == 0) {
-				state = BEGIN;
 				codePoint = decoding;
+				switch(state) {
+				case LEADING4:
+					if(codePoint > 0x10FFFF) {
+						throw InvalidCodePoint(codePoint);
+					}
+				}
+				state = BEGIN;
 			}
 		} else {
 			NOT_IMPLEMENTED
