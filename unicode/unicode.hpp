@@ -104,7 +104,8 @@ struct utf8 : public Encoding<byte, 4> {
 
 	enum class ByteType {
 		ASCII, CONTINUATION,
-		LEADING2, LEADING3, LEADING4
+		LEADING2, LEADING3, LEADING4,
+		INVALID
 	};
 
 	static ByteType byteType(CodeUnit codeUnit);

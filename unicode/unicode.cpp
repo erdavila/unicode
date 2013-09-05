@@ -101,10 +101,10 @@ auto utf8::byteType(CodeUnit codeUnit) -> ByteType {
 		return ByteType::LEADING2;
 	} else if(codeUnit >> 4 == 0x0E/*1110----*/) {
 		return ByteType::LEADING3;
-	} else if(codeUnit >> 3 == 0x1E/*11110---*/) {
+	} else if(codeUnit >> 3 == 0x1E/*11110---*/  &&  codeUnit <= 0xF4/*11110100*/) {
 		return ByteType::LEADING4;
 	} else {
-		NOT_IMPLEMENTED
+		return ByteType::INVALID;
 	}
 }
 

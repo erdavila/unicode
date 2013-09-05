@@ -115,8 +115,8 @@ TEST(UTF8DecoderTest, InvalidCodePoints) {
 	// 11110|100, 10|010000, 10|000000, 10|000000 -> ---100|01 0000|0000 00|000000
 	EXPECT_TRUE(invalidCodePointDecoded(bytes{'\xF4', '\x90', '\x80', '\x80'}, U'\U00110000'));
 
-	// 11110|111, 10|111111, 10|111111, 10|111111 -> ---111|11 1111|1111 11|111111
-	EXPECT_TRUE(invalidCodePointDecoded(bytes{'\xF7', '\xBF', '\xBF', '\xBF'}, U'\U001FFFFF'));
+	// 11110|100, 10|111111, 10|111111, 10|111111 -> ---100|11 1111|1111 11|111111
+	EXPECT_TRUE(invalidCodePointDecoded(bytes{'\xF4', '\xBF', '\xBF', '\xBF'}, U'\U0013FFFF'));
 }
 
 TEST(UTF8DecoderTest, OverlongEncodings) {
@@ -130,4 +130,33 @@ TEST(UTF8DecoderTest, OverlongEncodings) {
 
 	// 11110|000, 10|001111, 10|111111, 10|111111 -> 1111|1111 11|111111
 	EXPECT_TRUE(overlongCodePointDecoded(bytes{'\xF0', '\x8F', '\xBF', '\xBF'}, U'\uFFFF'));
+}
+
+ostream& operator<<(ostream& os, utf8::ByteType byteType) {
+#define CASE(BT) case BT: return os << #BT;
+	switch(byteType) {
+	CASE(utf8::ByteType::ASCII);
+	CASE(utf8::ByteType::CONTINUATION);
+	CASE(utf8::ByteType::LEADING2);
+	CASE(utf8::ByteType::LEADING3);
+	CASE(utf8::ByteType::LEADING4);
+	CASE(utf8::ByteType::INVALID);
+	default: return os << "????";
+	}
+#undef CASE
+}
+
+void testByteTypeRange(utf8::ByteType expectedType, int minValue, int maxValue) {
+	for(int b = minValue; b <= maxValue; b++) {
+		EXPECT_EQ(expectedType, utf8::byteType(b)) << "Wrong type for byte '\\x" << to_hex(b, 2) << "'";
+	}
+}
+
+TEST(UTF8DecoderTest, ByteTypes) {
+	testByteTypeRange(utf8::ByteType::ASCII,        0x00, 0x7F); // 0-------
+	testByteTypeRange(utf8::ByteType::CONTINUATION, 0x80, 0xBF); // 10------
+	testByteTypeRange(utf8::ByteType::LEADING2,     0xC0, 0xDF); // 110-----
+	testByteTypeRange(utf8::ByteType::LEADING3,     0xE0, 0xEF); // 1110----
+	testByteTypeRange(utf8::ByteType::LEADING4,     0xF0, 0xF4); // 11110--- (up to 11110100)
+	testByteTypeRange(utf8::ByteType::INVALID,      0xF5, 0xFF);
 }
