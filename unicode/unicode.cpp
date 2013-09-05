@@ -10,27 +10,6 @@ namespace /*unnamed*/ {
 			BEGIN, TWO_BYTES, THREE_BYTES, FOUR_BYTES
 		};
 
-		enum class ByteType {
-			ASCII, CONTINUATION,
-			LEADING2, LEADING3, LEADING4
-		};
-
-		ByteType byteType(utf8::CodeUnit codeUnit) {
-			if(codeUnit >> 7 == 0x00/*0-------*/) {
-				return ByteType::ASCII;
-			} else if(codeUnit >> 6 == 0x02/*10------*/) {
-				return ByteType::CONTINUATION;
-			} else if(codeUnit >> 5 == 0x06/*110-----*/) {
-				return ByteType::LEADING2;
-			} else if(codeUnit >> 4 == 0x0E/*1110----*/) {
-				return ByteType::LEADING3;
-			} else if(codeUnit >> 3 == 0x1E/*11110---*/) {
-				return ByteType::LEADING4;
-			} else {
-				NOT_IMPLEMENTED
-			}
-		}
-
 		char32_t minCodePoint(int state) {
 			switch(state) {
 			default:
@@ -111,6 +90,22 @@ char32_t utf8::Decoder::decode(CodeUnit codeUnit) {
 	}
 
 	return codePoint;
+}
+
+auto utf8::byteType(CodeUnit codeUnit) -> ByteType {
+	if(codeUnit >> 7 == 0x00/*0-------*/) {
+		return ByteType::ASCII;
+	} else if(codeUnit >> 6 == 0x02/*10------*/) {
+		return ByteType::CONTINUATION;
+	} else if(codeUnit >> 5 == 0x06/*110-----*/) {
+		return ByteType::LEADING2;
+	} else if(codeUnit >> 4 == 0x0E/*1110----*/) {
+		return ByteType::LEADING3;
+	} else if(codeUnit >> 3 == 0x1E/*11110---*/) {
+		return ByteType::LEADING4;
+	} else {
+		NOT_IMPLEMENTED
+	}
 }
 
 

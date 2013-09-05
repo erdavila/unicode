@@ -101,6 +101,13 @@ struct utf8 : public Encoding<byte, 4> {
 		int pending;
 		char32_t decoding;
 	};
+
+	enum class ByteType {
+		ASCII, CONTINUATION,
+		LEADING2, LEADING3, LEADING4
+	};
+
+	static ByteType byteType(CodeUnit codeUnit);
 };
 
 
