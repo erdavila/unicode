@@ -35,6 +35,11 @@ public:
 	InvalidCodePoint(char32_t codePoint) : CodePointException("Invalid code point", codePoint) {}
 };
 
+class InvalidCodeUnit : public Exception {
+public:
+	InvalidCodeUnit() : Exception("Invalid code unit") {}
+};
+
 
 template <typename CodeUnit_, unsigned int MaxCodeUnitsPerCodePoint_>
 struct Encoding {
@@ -44,6 +49,7 @@ struct Encoding {
 	enum : char32_t { PartiallyDecoded = 0xFFFFFFFF };
 	using CodeUnitsCount = ::unicode::CodeUnitsCount;
 	using InvalidCodePoint = ::unicode::InvalidCodePoint;
+	using InvalidCodeUnit = ::unicode::InvalidCodeUnit;
 
 	class Encoder {
 	public:
@@ -87,6 +93,8 @@ struct utf8 : public Encoding<byte, 4> {
 	public:
 		UnexpectedContinuationByte() : Exception("Unexpected continuation byte") {}
 	};
+
+	using InvalidByte = InvalidCodeUnit;
 
 
 	class Encoder : public EncodingBase::EncoderBase<Encoder> {

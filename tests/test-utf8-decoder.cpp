@@ -171,16 +171,43 @@ TEST(UTF8DecoderTest, ByteTypes) {
 	testByteTypeRange(utf8::ByteType::INVALID,      0xF5, 0xFF);
 }
 
+void simpleCheck(utf8::Decoder& decoder) {
+	char32_t decoded = decoder.decode('@');
+	EXPECT_EQ(U'@', decoded);
+}
+
 TEST(UTF8DecoderTest, UnexpectedContinuationByte) {
 	utf8::Decoder decoder;
 
-	// Unexpected at the begging of the decoding
+	// At the begging of the decoding
 	EXPECT_THROW(decoder.decode(0x80/*10------*/), utf8::UnexpectedContinuationByte);
 
 	// Check if decoding works after throwing
-	char32_t decoded = decoder.decode('@');
-	EXPECT_EQ(U'@', decoded);
+	{ SCOPED_TRACE(""); simpleCheck(decoder); }
 
-	// Unexpected during decoding
+	// During decoding
 	EXPECT_THROW(decoder.decode(0x80/*10------*/), utf8::UnexpectedContinuationByte);
+}
+
+TEST(UTF8DecoderTest, InvalidByte) {
+	utf8::Decoder decoder;
+
+	// At the begging of the decoding
+	EXPECT_THROW(decoder.decode(0xFF), utf8::InvalidByte);
+
+	// Check if decoding works after throwing
+	{ SCOPED_TRACE(""); simpleCheck(decoder); }
+
+	// During decoding
+	EXPECT_THROW(decoder.decode(0xFF), utf8::InvalidByte);
+
+	// Check if decoding works after throwing
+	{ SCOPED_TRACE(""); simpleCheck(decoder); }
+
+	// When expecting a continuation byte
+	decoder.decode(0xE0/*1110----*/);
+	EXPECT_THROW(decoder.decode(0xFF), utf8::InvalidByte);
+
+	// Check if decoding works after throwing
+	{ SCOPED_TRACE(""); simpleCheck(decoder); }
 }

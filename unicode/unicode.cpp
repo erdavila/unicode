@@ -67,9 +67,14 @@ CodeUnitsCount utf8::Encoder::encode(char32_t ch, CodeUnits& codeUnits) {
 
 char32_t utf8::Decoder::decode(CodeUnit codeUnit) {
 	using namespace utf8_impl;
-	ByteType type = byteType(codeUnit);
-	char32_t codePoint = PartiallyDecoded;
 
+	ByteType type = byteType(codeUnit);
+	if(type == ByteType::INVALID) {
+		state = NEUTRAL;
+		throw InvalidByte();
+	}
+
+	char32_t codePoint = PartiallyDecoded;
 	if(state == NEUTRAL) {
 		if(type == ByteType::ASCII) {
 			codePoint = codeUnit & 0x7F/*0-------*/;
