@@ -1,4 +1,3 @@
-#include "gtest/gtest.h"
 #include "test.hpp"
 using namespace unicode;
 using namespace std;

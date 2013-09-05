@@ -6,6 +6,14 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#ifdef __CYGWIN__
+// Why can't Google Test see the regular declarations of the functions below on Cygwin GCC?!
+# include <cstdio>
+# include <cstring>
+int __attribute__((__cdecl__)) fileno (FILE *);
+char *strdup(const char *s);
+FILE *fdopen(int fd, const char *mode);
+#endif
 #include "gtest/gtest.h"
 
 
