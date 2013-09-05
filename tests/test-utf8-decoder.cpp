@@ -80,7 +80,9 @@ TEST(UTF8DecoderTest, CodePointsEncodedToFourBytes) {
 	EXPECT_TRUE(decodes(bytes{'\xF4', '\x8F', '\xBF', '\xBF'}, U'\U0010FFFF'));
 }
 
-::testing::AssertionResult invalidCodePointDecoded(const vector<byte>& codeUnits, char32_t invalidCodePoint) {
+
+template <typename Exception>
+::testing::AssertionResult decodedCodePointThrows(const vector<byte>& codeUnits, char32_t codePoint) {
 	utf8::Decoder decoder;
 
 	auto lastIndex = codeUnits.size() - 1;
@@ -99,8 +101,8 @@ TEST(UTF8DecoderTest, CodePointsEncodedToFourBytes) {
 		return ::testing::AssertionFailure()
 		       << "returned code point U+" << to_hex(codePoint, 4)
 		       << " instead of throwing";
-	} catch(utf8::InvalidCodePoint& e) {
-		if(e.codePoint != invalidCodePoint) {
+	} catch(Exception& e) {
+		if(e.codePoint != codePoint) {
 			return ::testing::AssertionFailure() << "Wrong code point in exception: U+" << to_hex(e.codePoint, 4);
 		}
 		return ::testing::AssertionSuccess() << "Exception thrown: " << e.what();
@@ -108,6 +110,8 @@ TEST(UTF8DecoderTest, CodePointsEncodedToFourBytes) {
 }
 
 TEST(UTF8DecoderTest, InvalidCodePoints) {
+	auto invalidCodePointDecoded = decodedCodePointThrows<utf8::InvalidCodePoint>;
+
 	// 11110|100, 10|010000, 10|000000, 10|000000 -> ---100|01 0000|0000 00|000000
 	EXPECT_TRUE(invalidCodePointDecoded(bytes{'\xF4', '\x90', '\x80', '\x80'}, U'\U00110000'));
 
@@ -115,34 +119,9 @@ TEST(UTF8DecoderTest, InvalidCodePoints) {
 	EXPECT_TRUE(invalidCodePointDecoded(bytes{'\xF7', '\xBF', '\xBF', '\xBF'}, U'\U001FFFFF'));
 }
 
-::testing::AssertionResult overlongCodePointDecoded(const vector<byte>& codeUnits, char32_t overlongCodePoint) {
-	utf8::Decoder decoder;
-
-	auto lastIndex = codeUnits.size() - 1;
-	for(auto index = 0u; index < lastIndex; index++) {
-		byte codeUnit = codeUnits[index];
-		char32_t codePoint = decoder.decode(codeUnit);
-		if(codePoint != utf8::PartiallyDecoded) {
-			return ::testing::AssertionFailure()
-			       << "expected partially decoded code point but got U+" << to_hex(codePoint,4)
-			       << " at index " << index;
-		}
-	}
-
-	try {
-		char32_t codePoint = decoder.decode(codeUnits[lastIndex]);
-		return ::testing::AssertionFailure()
-		       << "returned code point U+" << to_hex(codePoint, 4)
-		       << " instead of throwing";
-	} catch(utf8::OverlongEncoding& e) {
-		if(e.codePoint != overlongCodePoint) {
-			return ::testing::AssertionFailure() << "Wrong code point in exception: U+" << to_hex(e.codePoint, 4);
-		}
-		return ::testing::AssertionSuccess() << "Exception thrown: " << e.what();
-	}
-}
-
 TEST(UTF8DecoderTest, OverlongEncodings) {
+	auto overlongCodePointDecoded = decodedCodePointThrows<utf8::OverlongEncoding>;
+
 	// 110|00001, 10|111111 -> -----000 01|111111
 	EXPECT_TRUE(overlongCodePointDecoded(bytes{'\xC1', '\xBF'}, U'\u007F'));
 
