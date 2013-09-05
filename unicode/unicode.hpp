@@ -94,6 +94,11 @@ struct utf8 : public Encoding<byte, 4> {
 		UnexpectedContinuationByte() : Exception("Unexpected continuation byte") {}
 	};
 
+	class ExpectedContinuationByte : public Exception {
+	public:
+		ExpectedContinuationByte() : Exception("Expected continuation byte") {}
+	};
+
 	using InvalidByte = InvalidCodeUnit;
 
 

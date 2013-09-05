@@ -189,6 +189,26 @@ TEST(UTF8DecoderTest, UnexpectedContinuationByte) {
 	EXPECT_THROW(decoder.decode(0x80/*10------*/), utf8::UnexpectedContinuationByte);
 }
 
+TEST(UTF8DecoderTest, ExpectedContinuationByte) {
+	utf8::Decoder decoder;
+	enum {
+		ASCII_BYTE   = 0x00/*0-------*/,
+		LEADING_BYTE = 0xE0/*1110----*/
+	};
+
+	decoder.decode(LEADING_BYTE);
+	EXPECT_THROW(decoder.decode(ASCII_BYTE), utf8::ExpectedContinuationByte);
+
+	// Check if decoding works after throwing
+	{ SCOPED_TRACE(""); simpleCheck(decoder); }
+
+	decoder.decode(LEADING_BYTE);
+	EXPECT_THROW(decoder.decode(LEADING_BYTE), utf8::ExpectedContinuationByte);
+
+	// Check if decoding works after throwing
+	{ SCOPED_TRACE(""); simpleCheck(decoder); }
+}
+
 TEST(UTF8DecoderTest, InvalidByte) {
 	utf8::Decoder decoder;
 

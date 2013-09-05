@@ -110,7 +110,8 @@ char32_t utf8::Decoder::decode(CodeUnit codeUnit) {
 				}
 			}
 		} else {
-			NOT_IMPLEMENTED
+			state = NEUTRAL;
+			throw ExpectedContinuationByte();
 		}
 	}
 
