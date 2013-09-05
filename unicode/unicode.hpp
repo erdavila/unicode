@@ -25,23 +25,14 @@ public:
 class CodePointException : public Exception {
 public:
 	char32_t codePoint;
-	CodePointException(const char* problem, char32_t codePoint) : Exception(msg(problem, codePoint)), codePoint(codePoint) {}
+	CodePointException(const char* problem, char32_t codePoint);
 private:
-	static std::string msg(const char* problem, char32_t codePoint) {
-		std::ostringstream ostrs;
-		ostrs << problem << " U+" << std::hex << codePoint;
-		return ostrs.str();
-	}
+	static std::string msg(const char* problem, char32_t codePoint);
 };
 
 class InvalidCodePoint : public CodePointException {
 public:
 	InvalidCodePoint(char32_t codePoint) : CodePointException("Invalid code point", codePoint) {}
-};
-
-class OverlongEncoding : public CodePointException {
-public:
-	OverlongEncoding(char32_t codePoint) : CodePointException("Overlong encoding of code point", codePoint) {}
 };
 
 
@@ -53,24 +44,23 @@ struct Encoding {
 	enum : char32_t { PartiallyDecoded = 0xFFFFFFFF };
 	using CodeUnitsCount = ::unicode::CodeUnitsCount;
 	using InvalidCodePoint = ::unicode::InvalidCodePoint;
-	using OverlongEncoding = ::unicode::OverlongEncoding;
 
 	class Encoder {
 	public:
 		virtual ~Encoder() = default;
-		virtual void dispatchEncode(char32_t, CodeUnits&, CodeUnitsCount&) = 0;
+		virtual void virtualEncode(char32_t, CodeUnits&, CodeUnitsCount&) = 0;
 	};
 
 	class Decoder {
 	public:
 		virtual ~Decoder() = default;
-		virtual char32_t dispatchDecode(CodeUnit) = 0;
+		virtual char32_t virtualDecode(CodeUnit) = 0;
 	};
 
 	template <typename Derived>
 	class EncoderBase : public Encoder {
 	public:
-		void dispatchEncode(char32_t ch, CodeUnits& codeUnits, CodeUnitsCount& codeUnitsCount) override {
+		void virtualEncode(char32_t ch, CodeUnits& codeUnits, CodeUnitsCount& codeUnitsCount) override {
 			dynamic_cast<Derived*>(this)->encode(ch, codeUnits, codeUnitsCount);
 		}
 	};
@@ -78,7 +68,7 @@ struct Encoding {
 	template <typename Derived>
 	class DecoderBase : public Decoder {
 	public:
-		char32_t dispatchDecode(CodeUnit codeUnit) override {
+		char32_t virtualDecode(CodeUnit codeUnit) override {
 			return dynamic_cast<Derived*>(this)->decode(codeUnit);
 		}
 	};
@@ -87,6 +77,12 @@ struct Encoding {
 
 struct utf8 : public Encoding<byte, 4> {
 	using EncodingBase = Encoding<byte, 4>;
+
+	class OverlongEncoding : public CodePointException {
+	public:
+		OverlongEncoding(char32_t codePoint) : CodePointException("Overlong encoding of code point", codePoint) {}
+	};
+
 
 	class Encoder : public EncodingBase::EncoderBase<Encoder> {
 	public:

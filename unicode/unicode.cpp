@@ -23,6 +23,21 @@ namespace /*unnamed*/ {
 }
 
 
+CodePointException::CodePointException(const char* problem, char32_t codePoint)
+	: Exception(msg(problem, codePoint)), codePoint(codePoint)
+	{}
+
+
+std::string CodePointException::msg(const char* problem, char32_t codePoint) {
+	std::ostringstream ostrs;
+	ostrs << problem << " U+";
+	ostrs.fill('0');
+	ostrs.width(4);
+	ostrs << std::hex << codePoint;
+	return ostrs.str();
+}
+
+
 void utf8::Encoder::encode(char32_t ch, CodeUnits& codeUnits, CodeUnitsCount& codeUnitsCount) {
 	byte leadingByteMask;
 	if(ch <= 0x7F) {
