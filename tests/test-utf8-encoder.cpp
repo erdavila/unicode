@@ -5,9 +5,7 @@ using namespace std;
 ::testing::AssertionResult encodes(char32_t codePoint, const vector<byte>& expectedCodeUnits) {
 	utf8::Encoder encoder;
 	utf8::CodeUnits codeUnits;
-	utf8::CodeUnitsCount codeUnitsCount;
-
-	encoder.encode(codePoint, codeUnits, codeUnitsCount);
+	utf8::CodeUnitsCount codeUnitsCount = encoder.encode(codePoint, codeUnits);
 
 	if(codeUnitsCount != expectedCodeUnits.size()) {
 		return ::testing::AssertionFailure() << codeUnitsCount << " code units instead of " << expectedCodeUnits.size();
@@ -81,10 +79,9 @@ TEST(UTF8EncoderTest, CodePointsEncodedToFourBytes) {
 ::testing::AssertionResult failsToEncode(char32_t codePoint) {
 	utf8::Encoder encoder;
 	utf8::CodeUnits codeUnits;
-	utf8::CodeUnitsCount codeUnitsCount;
 
 	try {
-		encoder.encode(codePoint, codeUnits, codeUnitsCount);
+		encoder.encode(codePoint, codeUnits);
 		return ::testing::AssertionFailure() << "Exception not thrown";
 	} catch(utf8::InvalidCodePoint& e) {
 		if(e.codePoint != codePoint) {

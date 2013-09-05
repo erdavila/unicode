@@ -38,8 +38,9 @@ std::string CodePointException::msg(const char* problem, char32_t codePoint) {
 }
 
 
-void utf8::Encoder::encode(char32_t ch, CodeUnits& codeUnits, CodeUnitsCount& codeUnitsCount) {
+CodeUnitsCount utf8::Encoder::encode(char32_t ch, CodeUnits& codeUnits) {
 	byte leadingByteMask;
+	CodeUnitsCount codeUnitsCount;
 	if(ch <= 0x7F) {
 		codeUnitsCount = 1;
 		leadingByteMask = 0x00/*0-------*/;
@@ -61,6 +62,8 @@ void utf8::Encoder::encode(char32_t ch, CodeUnits& codeUnits, CodeUnitsCount& co
 		ch >>= 6;
 	}
 	codeUnits[0] = ch | leadingByteMask;
+
+	return codeUnitsCount;
 }
 
 char32_t utf8::Decoder::decode(CodeUnit codeUnit) {
@@ -124,7 +127,7 @@ auto utf8::byteType(CodeUnit codeUnit) -> ByteType {
 }
 
 
-void utf32::Encoder::encode(char32_t, CodeUnits&, CodeUnitsCount&) {
+CodeUnitsCount utf32::Encoder::encode(char32_t, CodeUnits&) {
 	NOT_IMPLEMENTED
 }
 

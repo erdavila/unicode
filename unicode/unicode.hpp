@@ -48,7 +48,7 @@ struct Encoding {
 	class Encoder {
 	public:
 		virtual ~Encoder() = default;
-		virtual void virtualEncode(char32_t, CodeUnits&, CodeUnitsCount&) = 0;
+		virtual CodeUnitsCount virtualEncode(char32_t, CodeUnits&) = 0;
 	};
 
 	class Decoder {
@@ -60,8 +60,8 @@ struct Encoding {
 	template <typename Derived>
 	class EncoderBase : public Encoder {
 	public:
-		void virtualEncode(char32_t ch, CodeUnits& codeUnits, CodeUnitsCount& codeUnitsCount) override {
-			dynamic_cast<Derived*>(this)->encode(ch, codeUnits, codeUnitsCount);
+		CodeUnitsCount virtualEncode(char32_t ch, CodeUnits& codeUnits) override {
+			return dynamic_cast<Derived*>(this)->encode(ch, codeUnits);
 		}
 	};
 
@@ -86,7 +86,7 @@ struct utf8 : public Encoding<byte, 4> {
 
 	class Encoder : public EncodingBase::EncoderBase<Encoder> {
 	public:
-		void encode(char32_t, CodeUnits&, CodeUnitsCount&);
+		CodeUnitsCount encode(char32_t, CodeUnits&);
 	};
 
 	class Decoder : public EncodingBase::DecoderBase<Decoder> {
@@ -113,7 +113,7 @@ struct utf32 : public Encoding<char32_t, 1> {
 
 	class Encoder : public EncodingBase::EncoderBase<Encoder> {
 	public:
-		void encode(char32_t, CodeUnits&, CodeUnitsCount&);
+		CodeUnitsCount encode(char32_t, CodeUnits&);
 	};
 
 	class Decoder : public EncodingBase::DecoderBase<Decoder> {
