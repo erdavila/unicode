@@ -81,7 +81,7 @@ TEST(UTF8DecoderTest, CodePointsEncodedToFourBytes) {
 }
 
 
-template <typename Exception>
+template <typename ExpectedException>
 ::testing::AssertionResult decodedCodePointThrows(const vector<byte>& codeUnits, char32_t codePoint) {
 	utf8::Decoder decoder;
 
@@ -101,12 +101,22 @@ template <typename Exception>
 		return ::testing::AssertionFailure()
 		       << "returned code point U+" << to_hex(codePoint, 4)
 		       << " instead of throwing";
-	} catch(Exception& e) {
+	} catch(ExpectedException& e) {
 		if(e.codePoint != codePoint) {
 			return ::testing::AssertionFailure() << "Wrong code point in exception: U+" << to_hex(e.codePoint, 4);
 		}
-		return ::testing::AssertionSuccess() << "Exception thrown: " << e.what();
 	}
+
+	try {
+		char32_t codePoint = decoder.decode('@');
+		if(codePoint != U'@') {
+			return ::testing::AssertionFailure() << "Returned wrong code point U+" << to_hex(codePoint, 4) << " after throwing";
+		}
+	} catch(::unicode::Exception& e) {
+		return ::testing::AssertionFailure() << "Threw another exception: " << e.what();
+	}
+
+	return ::testing::AssertionSuccess();
 }
 
 TEST(UTF8DecoderTest, InvalidCodePoints) {

@@ -7,13 +7,13 @@ namespace unicode {
 namespace /*unnamed*/ {
 	namespace utf8_impl {
 		enum DecodeState {
-			BEGIN, TWO_BYTES, THREE_BYTES, FOUR_BYTES
+			NEUTRAL, TWO_BYTES, THREE_BYTES, FOUR_BYTES
 		};
 
 		char32_t minCodePoint(int state) {
 			switch(state) {
 			default:
-			case BEGIN:       return U'\u0000';
+			case NEUTRAL:     return U'\u0000';
 			case TWO_BYTES:   return U'\u0080';
 			case THREE_BYTES: return U'\u0800';
 			case FOUR_BYTES:  return U'\U00010000';
@@ -26,7 +26,6 @@ namespace /*unnamed*/ {
 CodePointException::CodePointException(const char* problem, char32_t codePoint)
 	: Exception(msg(problem, codePoint)), codePoint(codePoint)
 	{}
-
 
 std::string CodePointException::msg(const char* problem, char32_t codePoint) {
 	std::ostringstream ostrs;
@@ -71,7 +70,7 @@ char32_t utf8::Decoder::decode(CodeUnit codeUnit) {
 	ByteType type = byteType(codeUnit);
 	char32_t codePoint = PartiallyDecoded;
 
-	if(state == BEGIN) {
+	if(state == NEUTRAL) {
 		if(type == ByteType::ASCII) {
 			codePoint = codeUnit & 0x7F/*0-------*/;
 		} else if(type == ByteType::LEADING2) {
@@ -94,13 +93,14 @@ char32_t utf8::Decoder::decode(CodeUnit codeUnit) {
 			decoding = (decoding << 6) | (codeUnit & 0x3F/*10------*/);
 			if(--pending == 0) {
 				codePoint = decoding;
-				if(state == FOUR_BYTES  &&  codePoint > 0x10FFFF) {
+				auto prevState = state;
+				state = NEUTRAL;
+				if(codePoint > 0x10FFFF) {
 					throw InvalidCodePoint(codePoint);
 				}
-				if(codePoint < minCodePoint(state)) {
+				if(codePoint < minCodePoint(prevState)) {
 					throw OverlongEncoding(codePoint);
 				}
-				state = BEGIN;
 			}
 		} else {
 			NOT_IMPLEMENTED
