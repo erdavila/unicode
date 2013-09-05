@@ -83,6 +83,11 @@ struct utf8 : public Encoding<byte, 4> {
 		OverlongEncoding(char32_t codePoint) : CodePointException("Overlong encoding of code point", codePoint) {}
 	};
 
+	class UnexpectedContinuationByte : public Exception {
+	public:
+		UnexpectedContinuationByte() : Exception("Unexpected continuation byte") {}
+	};
+
 
 	class Encoder : public EncodingBase::EncoderBase<Encoder> {
 	public:

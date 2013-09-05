@@ -85,6 +85,8 @@ char32_t utf8::Decoder::decode(CodeUnit codeUnit) {
 			decoding = codeUnit & 0x07/*11110---*/;
 			pending = 3;
 			state = FOUR_BYTES;
+		} else if(type == ByteType::CONTINUATION) {
+			throw UnexpectedContinuationByte();
 		} else {
 			NOT_IMPLEMENTED;
 		}

@@ -170,3 +170,17 @@ TEST(UTF8DecoderTest, ByteTypes) {
 	testByteTypeRange(utf8::ByteType::LEADING4,     0xF0, 0xF4); // 11110--- (up to 11110100)
 	testByteTypeRange(utf8::ByteType::INVALID,      0xF5, 0xFF);
 }
+
+TEST(UTF8DecoderTest, UnexpectedContinuationByte) {
+	utf8::Decoder decoder;
+
+	// Unexpected at the begging of the decoding
+	EXPECT_THROW(decoder.decode(0x80/*10------*/), utf8::UnexpectedContinuationByte);
+
+	// Check if decoding works after throwing
+	char32_t decoded = decoder.decode('@');
+	EXPECT_EQ(U'@', decoded);
+
+	// Unexpected during decoding
+	EXPECT_THROW(decoder.decode(0x80/*10------*/), utf8::UnexpectedContinuationByte);
+}
