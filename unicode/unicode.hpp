@@ -6,7 +6,7 @@
 #include <stdexcept>
 #include <string>
 #include <utility>
-#include <cassert> // TEMPORARY!!!
+#include <cassert>
 #define NOT_TESTED { assert(!"not tested"); } // TEMPORARY!!!
 #define NOT_IMPLEMENTED { assert(!"not implemented"); } // TEMPORARY!!!
 
@@ -15,6 +15,11 @@ namespace unicode {
 
 using byte = unsigned char;
 using CodeUnitsCount = unsigned int;
+
+
+enum : char32_t {
+	MAX_CODE_POINT = U'\U0010FFFF',
+};
 
 
 class Exception : public std::logic_error {
