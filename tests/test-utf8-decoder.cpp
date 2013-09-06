@@ -177,21 +177,22 @@ void simpleCheck(utf8::Decoder& decoder) {
 }
 
 TEST(UTF8DecoderTest, UnexpectedContinuationByte) {
+	enum : byte { CONTINUATION_BYTE = 0x80/*10------*/ };
 	utf8::Decoder decoder;
 
 	// At the begging of the decoding
-	EXPECT_THROW(decoder.decode(0x80/*10------*/), utf8::UnexpectedContinuationByte);
+	EXPECT_THROW(decoder.decode(CONTINUATION_BYTE), utf8::UnexpectedContinuationByte);
 
 	// Check if decoding works after throwing
 	{ SCOPED_TRACE(""); simpleCheck(decoder); }
 
 	// During decoding
-	EXPECT_THROW(decoder.decode(0x80/*10------*/), utf8::UnexpectedContinuationByte);
+	EXPECT_THROW(decoder.decode(CONTINUATION_BYTE), utf8::UnexpectedContinuationByte);
 }
 
 TEST(UTF8DecoderTest, ExpectedContinuationByte) {
 	utf8::Decoder decoder;
-	enum {
+	enum : byte {
 		ASCII_BYTE   = 0x00/*0-------*/,
 		LEADING_BYTE = 0xE0/*1110----*/
 	};
@@ -210,23 +211,27 @@ TEST(UTF8DecoderTest, ExpectedContinuationByte) {
 }
 
 TEST(UTF8DecoderTest, InvalidByte) {
+	enum : byte {
+		INVALID_BYTE = 0xFF,
+		LEADING_BYTE = 0xE0/*1110----*/
+	};
 	utf8::Decoder decoder;
 
 	// At the begging of the decoding
-	EXPECT_THROW(decoder.decode(0xFF), utf8::InvalidByte);
+	EXPECT_THROW(decoder.decode(INVALID_BYTE), utf8::InvalidByte);
 
 	// Check if decoding works after throwing
 	{ SCOPED_TRACE(""); simpleCheck(decoder); }
 
 	// During decoding
-	EXPECT_THROW(decoder.decode(0xFF), utf8::InvalidByte);
+	EXPECT_THROW(decoder.decode(INVALID_BYTE), utf8::InvalidByte);
 
 	// Check if decoding works after throwing
 	{ SCOPED_TRACE(""); simpleCheck(decoder); }
 
 	// When expecting a continuation byte
-	decoder.decode(0xE0/*1110----*/);
-	EXPECT_THROW(decoder.decode(0xFF), utf8::InvalidByte);
+	decoder.decode(LEADING_BYTE);
+	EXPECT_THROW(decoder.decode(INVALID_BYTE), utf8::InvalidByte);
 
 	// Check if decoding works after throwing
 	{ SCOPED_TRACE(""); simpleCheck(decoder); }
