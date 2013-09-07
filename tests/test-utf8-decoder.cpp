@@ -254,3 +254,24 @@ TEST(UTF8DecoderTest, Partial) {
 	{ SCOPED_TRACE(""); simpleCheck(decoder); }
 	EXPECT_FALSE(decoder.partial());
 }
+
+TEST(UTF8DecoderTest, Reset) {
+	utf8::Decoder decoder;
+
+	decoder.decode(LEADING3_BYTE);
+	EXPECT_TRUE(decoder.partial());
+
+	decoder.reset();
+	EXPECT_FALSE(decoder.partial());
+	EXPECT_THROW(decoder.decode(CONTINUATION_BYTE), utf8::UnexpectedContinuationByte);
+
+	{ SCOPED_TRACE(""); simpleCheck(decoder); }
+
+	decoder.decode(LEADING3_BYTE);
+	decoder.decode(CONTINUATION_BYTE);
+
+	EXPECT_TRUE(decoder.partial());
+
+	decoder.reset();
+	EXPECT_FALSE(decoder.partial());
+}

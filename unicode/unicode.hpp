@@ -67,6 +67,7 @@ struct Encoding {
 		virtual ~Decoder() = default;
 		virtual char32_t virtualDecode(CodeUnit) = 0;
 		virtual bool virtualPartial() const noexcept = 0;
+		virtual void virtualReset() noexcept = 0;
 	};
 
 	template <typename Base, typename Derived>
@@ -90,6 +91,7 @@ struct Encoding {
 	public:
 		char32_t virtualDecode(CodeUnit codeUnit) override { return dynamic_cast<Derived*>(this)->decode(codeUnit); }
 		virtual bool virtualPartial() const noexcept override { return derivedThis()->partial(); }
+		virtual void virtualReset() noexcept override { derivedThis()->reset(); }
 	};
 };
 
@@ -124,6 +126,7 @@ struct utf8 : public Encoding<byte, 4> {
 	public:
 		char32_t decode(CodeUnit);
 		bool partial() const noexcept;
+		void reset() noexcept;
 	private:
 		int state = 0;
 		int pending;

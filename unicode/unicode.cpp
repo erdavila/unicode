@@ -183,6 +183,10 @@ bool utf8::Decoder::partial() const noexcept {
 	return state != utf8_impl::NEUTRAL;
 }
 
+void utf8::Decoder::reset() noexcept {
+	state = utf8_impl::NEUTRAL;
+}
+
 auto utf8::byteType(CodeUnit codeUnit) noexcept -> ByteType {
 	using namespace utf8_impl;
 
