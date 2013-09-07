@@ -84,11 +84,11 @@ namespace /*unnamed*/ {
 }
 
 
-CodePointException::CodePointException(const char* problem, char32_t codePoint)
+CodePointException::CodePointException(const char* problem, char32_t codePoint) noexcept
 	: Exception(msg(problem, codePoint)), codePoint(codePoint)
 	{}
 
-std::string CodePointException::msg(const char* problem, char32_t codePoint) {
+std::string CodePointException::msg(const char* problem, char32_t codePoint) noexcept {
 	std::ostringstream ostrs;
 	ostrs << problem << " U+";
 	ostrs.fill('0');
@@ -179,7 +179,11 @@ char32_t utf8::Decoder::decode(CodeUnit codeUnit) {
 	return codePoint;
 }
 
-auto utf8::byteType(CodeUnit codeUnit) -> ByteType {
+bool utf8::Decoder::partial() const noexcept {
+	return state != utf8_impl::NEUTRAL;
+}
+
+auto utf8::byteType(CodeUnit codeUnit) noexcept -> ByteType {
 	using namespace utf8_impl;
 
 	if(OneByte::Byte::matches(codeUnit)) {

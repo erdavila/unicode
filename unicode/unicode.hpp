@@ -24,25 +24,25 @@ enum : char32_t {
 
 class Exception : public std::logic_error {
 public:
-	Exception(const std::string& message) : std::logic_error(message) {}
+	Exception(const std::string& message) noexcept : std::logic_error(message) {}
 };
 
 class CodePointException : public Exception {
 public:
 	char32_t codePoint;
-	CodePointException(const char* problem, char32_t codePoint);
+	CodePointException(const char* problem, char32_t codePoint) noexcept;
 private:
-	static std::string msg(const char* problem, char32_t codePoint);
+	static std::string msg(const char* problem, char32_t codePoint) noexcept;
 };
 
 class InvalidCodePoint : public CodePointException {
 public:
-	InvalidCodePoint(char32_t codePoint) : CodePointException("Invalid code point", codePoint) {}
+	InvalidCodePoint(char32_t codePoint) noexcept : CodePointException("Invalid code point", codePoint) {}
 };
 
 class InvalidCodeUnit : public Exception {
 public:
-	InvalidCodeUnit() : Exception("Invalid code unit") {}
+	InvalidCodeUnit() noexcept : Exception("Invalid code unit") {}
 };
 
 
@@ -66,22 +66,30 @@ struct Encoding {
 	public:
 		virtual ~Decoder() = default;
 		virtual char32_t virtualDecode(CodeUnit) = 0;
+		virtual bool virtualPartial() const noexcept = 0;
+	};
+
+	template <typename Base, typename Derived>
+	struct _Caster : Base {
+		Derived* derivedThis() noexcept { return dynamic_cast<Derived*>(this); }
+		const Derived* derivedThis() const noexcept { return dynamic_cast<const Derived*>(this); }
 	};
 
 	template <typename Derived>
-	class EncoderBase : public Encoder {
+	class EncoderBase : _Caster<Encoder, Derived> {
+		using _Caster<Encoder, Derived>::derivedThis;
 	public:
 		CodeUnitsCount virtualEncode(char32_t ch, CodeUnits& codeUnits) override {
-			return dynamic_cast<Derived*>(this)->encode(ch, codeUnits);
+			return derivedThis()->encode(ch, codeUnits);
 		}
 	};
 
 	template <typename Derived>
-	class DecoderBase : public Decoder {
+	class DecoderBase : _Caster<Decoder, Derived> {
+		using _Caster<Decoder, Derived>::derivedThis;
 	public:
-		char32_t virtualDecode(CodeUnit codeUnit) override {
-			return dynamic_cast<Derived*>(this)->decode(codeUnit);
-		}
+		char32_t virtualDecode(CodeUnit codeUnit) override { return dynamic_cast<Derived*>(this)->decode(codeUnit); }
+		virtual bool virtualPartial() const noexcept override { return derivedThis()->partial(); }
 	};
 };
 
@@ -91,17 +99,17 @@ struct utf8 : public Encoding<byte, 4> {
 
 	class OverlongEncoding : public CodePointException {
 	public:
-		OverlongEncoding(char32_t codePoint) : CodePointException("Overlong encoding of code point", codePoint) {}
+		OverlongEncoding(char32_t codePoint) noexcept : CodePointException("Overlong encoding of code point", codePoint) {}
 	};
 
 	class UnexpectedContinuationByte : public Exception {
 	public:
-		UnexpectedContinuationByte() : Exception("Unexpected continuation byte") {}
+		UnexpectedContinuationByte() noexcept : Exception("Unexpected continuation byte") {}
 	};
 
 	class ExpectedContinuationByte : public Exception {
 	public:
-		ExpectedContinuationByte() : Exception("Expected continuation byte") {}
+		ExpectedContinuationByte() noexcept : Exception("Expected continuation byte") {}
 	};
 
 	using InvalidByte = InvalidCodeUnit;
@@ -115,6 +123,7 @@ struct utf8 : public Encoding<byte, 4> {
 	class Decoder : public EncodingBase::DecoderBase<Decoder> {
 	public:
 		char32_t decode(CodeUnit);
+		bool partial() const noexcept;
 	private:
 		int state = 0;
 		int pending;
@@ -127,7 +136,7 @@ struct utf8 : public Encoding<byte, 4> {
 		INVALID
 	};
 
-	static ByteType byteType(CodeUnit codeUnit);
+	static ByteType byteType(CodeUnit codeUnit) noexcept;
 };
 
 
@@ -152,7 +161,7 @@ public:
 	using InputCodeUnit  = typename From::CodeUnit;
 	using OutputCodeUnit = typename   To::CodeUnit;
 
-	InputStream(IStream& is) : is(is) {}
+	InputStream(IStream& is) noexcept : is(is) {}
 
 	OutputCodeUnit get();
 
@@ -167,7 +176,7 @@ public:
 	using InputCodeUnit  = typename From::CodeUnit;
 	using OutputCodeUnit = typename   To::CodeUnit;
 
-	OutputStream(OStream& os) : os(os) {}
+	OutputStream(OStream& os) noexcept : os(os) {}
 
 	void put(InputCodeUnit);
 
@@ -177,12 +186,12 @@ private:
 
 
 template <typename From, typename To, typename IStream>
-inline InputStream<From, To, IStream> createInputStream(IStream& is) {
+inline InputStream<From, To, IStream> createInputStream(IStream& is) noexcept {
 	return InputStream<From, To, IStream>(is);
 }
 
 template <typename From, typename To, typename OStream>
-inline OutputStream<From, To, OStream> createOutputStream(OStream& os) {
+inline OutputStream<From, To, OStream> createOutputStream(OStream& os) noexcept {
 	return OutputStream<From, To, OStream>(os);
 }
 
