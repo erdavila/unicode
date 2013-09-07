@@ -59,39 +59,27 @@ struct Encoding {
 	class Encoder {
 	public:
 		virtual ~Encoder() = default;
-		virtual CodeUnitsCount virtualEncode(char32_t, CodeUnits&) = 0;
+		virtual CodeUnitsCount encode(char32_t, CodeUnits&) = 0;
+	};
+
+	template <typename EncoderImpl>
+	class _polymorphic_encoder_impl : public EncoderImpl, public Encoder {
+		CodeUnitsCount encode(char32_t codePoint, CodeUnits& codeUnit) override { return EncoderImpl::encode(codePoint, codeUnit); }
 	};
 
 	class Decoder {
 	public:
 		virtual ~Decoder() = default;
-		virtual char32_t virtualDecode(CodeUnit) = 0;
-		virtual bool virtualPartial() const noexcept = 0;
-		virtual void virtualReset() noexcept = 0;
+		virtual char32_t decode(CodeUnit) = 0;
+		virtual bool partial() const noexcept = 0;
+		virtual void reset() noexcept = 0;
 	};
 
-	template <typename Base, typename Derived>
-	struct _Caster : Base {
-		Derived* derivedThis() noexcept { return dynamic_cast<Derived*>(this); }
-		const Derived* derivedThis() const noexcept { return dynamic_cast<const Derived*>(this); }
-	};
-
-	template <typename Derived>
-	class EncoderBase : public _Caster<Encoder, Derived> {
-		using _Caster<Encoder, Derived>::derivedThis;
-	public:
-		CodeUnitsCount virtualEncode(char32_t ch, CodeUnits& codeUnits) override {
-			return derivedThis()->encode(ch, codeUnits);
-		}
-	};
-
-	template <typename Derived>
-	class DecoderBase : public _Caster<Decoder, Derived> {
-		using _Caster<Decoder, Derived>::derivedThis;
-	public:
-		char32_t virtualDecode(CodeUnit codeUnit) override { return dynamic_cast<Derived*>(this)->decode(codeUnit); }
-		virtual bool virtualPartial() const noexcept override { return derivedThis()->partial(); }
-		virtual void virtualReset() noexcept override { derivedThis()->reset(); }
+	template <typename DecoderImpl>
+	class _polymorphic_decoder_impl : public DecoderImpl, public Decoder {
+		char32_t decode(CodeUnit codeUnit) override { return DecoderImpl::decode(codeUnit); }
+		bool partial() const noexcept override { return DecoderImpl::partial(); }
+		void reset() noexcept override { DecoderImpl::reset(); }
 	};
 };
 
@@ -117,12 +105,13 @@ struct utf8 : public Encoding<byte, 4> {
 	using InvalidByte = InvalidCodeUnit;
 
 
-	class Encoder : public EncodingBase::EncoderBase<Encoder> {
+	class Encoder {
 	public:
 		CodeUnitsCount encode(char32_t, CodeUnits&);
 	};
+	using PolymorphicEncoder = _polymorphic_encoder_impl<Encoder>;
 
-	class Decoder : public EncodingBase::DecoderBase<Decoder> {
+	class Decoder {
 	public:
 		char32_t decode(CodeUnit);
 		bool partial() const noexcept;
@@ -132,6 +121,7 @@ struct utf8 : public Encoding<byte, 4> {
 		int pending;
 		char32_t decoding;
 	};
+	using PolymorphicDecoder = _polymorphic_decoder_impl<Decoder>;
 
 	enum class ByteType {
 		ASCII, CONTINUATION,
@@ -146,15 +136,17 @@ struct utf8 : public Encoding<byte, 4> {
 struct utf32 : public Encoding<char32_t, 1> {
 	using EncodingBase = Encoding<char32_t, 1>;
 
-	class Encoder : public EncodingBase::EncoderBase<Encoder> {
+	class Encoder {
 	public:
 		CodeUnitsCount encode(char32_t, CodeUnits&);
 	};
+	using PolymorphicEncoder = _polymorphic_encoder_impl<Encoder>;
 
-	class Decoder : public EncodingBase::DecoderBase<Decoder> {
+	class Decoder {
 	public:
 		char32_t decode(CodeUnit);
 	};
+	using PolymorphicDecoder = _polymorphic_decoder_impl<Decoder>;
 };
 
 
