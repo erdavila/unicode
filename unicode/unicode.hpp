@@ -145,6 +145,8 @@ struct utf32 : public Encoding<char32_t, 1> {
 	class Decoder {
 	public:
 		char32_t decode(CodeUnit);
+		bool partial() const noexcept;
+		void reset() noexcept;
 	};
 	using PolymorphicDecoder = _polymorphic_decoder_impl<Decoder>;
 };

@@ -7,7 +7,7 @@ EXE  := tests/test-unicode
 GTEST_ROOT    := gtest-1.7.0
 GTEST_LIB_DIR := $(GTEST_ROOT)/make
 GTEST_LIB     := $(GTEST_LIB_DIR)/gtest_main.a
-CXXFLAGS := -Wall -std=c++11 -I . -I $(GTEST_ROOT) -I $(GTEST_ROOT)/include
+CXXFLAGS := -Wall -std=c++11 -I . -I $(GTEST_ROOT) -I $(GTEST_ROOT)/include -g
 
 MAKEDEPS = @ g++ $(CXXFLAGS) -MM $< -o $(@:.o=.d) -MT $@ -MP
 COMPILE  =   g++ $(CXXFLAGS) -c  $< -o $@

@@ -206,13 +206,25 @@ auto utf8::byteType(CodeUnit codeUnit) noexcept -> ByteType {
 }
 
 
-CodeUnitsCount utf32::Encoder::encode(char32_t, CodeUnits&) {
-	NOT_IMPLEMENTED
+CodeUnitsCount utf32::Encoder::encode(char32_t codePoint, CodeUnits& codeUnits) {
+	if(codePoint > MAX_CODE_POINT) {
+		throw InvalidCodePoint(codePoint);
+	}
+	codeUnits[0] = codePoint;
+	return 1;
 }
 
-char32_t utf32::Decoder::decode(CodeUnit) {
-	NOT_IMPLEMENTED
+char32_t utf32::Decoder::decode(CodeUnit codeUnit) {
+	char32_t codePoint = codeUnit;
+	if(codePoint > MAX_CODE_POINT) {
+		throw InvalidCodeUnit();
+	}
+	return codePoint;
 }
+
+bool utf32::Decoder::partial() const noexcept { return false; }
+
+void utf32::Decoder::reset() noexcept {}
 
 
 }

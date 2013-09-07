@@ -2,6 +2,8 @@
 using namespace unicode;
 using namespace std;
 
+namespace /*unnamed*/ {
+
 ::testing::AssertionResult encodes(char32_t codePoint, const vector<byte>& expectedCodeUnits) {
 	utf8::Encoder encoder;
 	utf8::CodeUnits codeUnits;
@@ -115,4 +117,6 @@ TEST(UTF8EncoderTest, Polymorphic) {
 	for(auto i = 0u; i < codeUnitsCount; i++) {
 		EXPECT_EQ(expectedBytes[i], codeUnits[i]) << "at index " << i;
 	}
+}
+
 }

@@ -2,6 +2,7 @@
 using namespace unicode;
 using namespace std;
 
+namespace /*unnamed*/ {
 
 TEST(UTF8DecoderTest, ASCIICodePoints) {
 	utf8::Decoder decoder;
@@ -301,4 +302,6 @@ TEST(UTF8DecoderTest, Polymorphic) {
 	EXPECT_EQ(utf8::PartiallyDecoded, decoder->decode(LEADING3_BYTE));
 	decoder->reset();
 	EXPECT_FALSE(decoder->partial());
+}
+
 }
