@@ -97,3 +97,22 @@ TEST(UTF8EncoderTest, InvalidCodePoints) {
 	EXPECT_TRUE(failsToEncode(U'\x80000000'));
 	EXPECT_TRUE(failsToEncode(U'\xFFFFFFFF'));
 }
+
+TEST(UTF8EncoderTest, Virtual) {
+	using EncodingBase = Encoding<byte, 4>;
+	utf8::Encoder utf8Encoder;
+	EncodingBase::Encoder* encoder = &utf8Encoder;
+	EncodingBase::CodeUnits codeUnits;
+	EncodingBase::CodeUnitsCount codeUnitsCount;
+
+	codeUnitsCount = encoder->virtualEncode(U'@', codeUnits);
+	EXPECT_EQ(1u, codeUnitsCount);
+	EXPECT_EQ('@', codeUnits[0]);
+
+	codeUnitsCount = encoder->virtualEncode(U'\U0001D11E', codeUnits);
+	bytes expectedBytes = {'\xF0', '\x9D', '\x84', '\x9E'};
+	ASSERT_EQ(expectedBytes.size(), codeUnitsCount);
+	for(auto i = 0u; i < codeUnitsCount; i++) {
+		EXPECT_EQ(expectedBytes[i], codeUnits[i]) << "at index " << i;
+	}
+}

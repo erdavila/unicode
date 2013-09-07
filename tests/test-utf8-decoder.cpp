@@ -275,3 +275,30 @@ TEST(UTF8DecoderTest, Reset) {
 	decoder.reset();
 	EXPECT_FALSE(decoder.partial());
 }
+
+TEST(UTF8DecoderTest, Virtual) {
+	utf8::Decoder utf8Decoder;
+	::unicode::Encoding<byte, 4>::Decoder* decoder = &utf8Decoder;
+
+	EXPECT_FALSE(decoder->virtualPartial());
+
+	EXPECT_EQ(U'@', decoder->virtualDecode('@'));
+	EXPECT_FALSE(decoder->virtualPartial());
+
+	EXPECT_EQ(utf8::PartiallyDecoded, decoder->virtualDecode(LEADING3_BYTE));
+	EXPECT_TRUE(decoder->virtualPartial());
+
+	EXPECT_EQ(utf8::PartiallyDecoded, decoder->virtualDecode(CONTINUATION_BYTE));
+	EXPECT_TRUE(decoder->virtualPartial());
+
+	char32_t expectedCodePoint = ((    LEADING3_BYTE & 0x0F) << 12)
+	                           | ((CONTINUATION_BYTE & 0x3F) <<  6)
+	                           |  (CONTINUATION_BYTE & 0x3F);
+
+	EXPECT_EQ(expectedCodePoint, decoder->virtualDecode(CONTINUATION_BYTE));
+	EXPECT_FALSE(decoder->virtualPartial());
+
+	EXPECT_EQ(utf8::PartiallyDecoded, decoder->virtualDecode(LEADING3_BYTE));
+	decoder->virtualReset();
+	EXPECT_FALSE(decoder->virtualPartial());
+}

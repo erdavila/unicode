@@ -77,7 +77,7 @@ struct Encoding {
 	};
 
 	template <typename Derived>
-	class EncoderBase : _Caster<Encoder, Derived> {
+	class EncoderBase : public _Caster<Encoder, Derived> {
 		using _Caster<Encoder, Derived>::derivedThis;
 	public:
 		CodeUnitsCount virtualEncode(char32_t ch, CodeUnits& codeUnits) override {
@@ -86,7 +86,7 @@ struct Encoding {
 	};
 
 	template <typename Derived>
-	class DecoderBase : _Caster<Decoder, Derived> {
+	class DecoderBase : public _Caster<Decoder, Derived> {
 		using _Caster<Decoder, Derived>::derivedThis;
 	public:
 		char32_t virtualDecode(CodeUnit codeUnit) override { return dynamic_cast<Derived*>(this)->decode(codeUnit); }
