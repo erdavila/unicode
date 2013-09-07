@@ -217,7 +217,7 @@ CodeUnitsCount utf32::Encoder::encode(char32_t codePoint, CodeUnits& codeUnits) 
 char32_t utf32::Decoder::decode(CodeUnit codeUnit) {
 	char32_t codePoint = codeUnit;
 	if(codePoint > MAX_CODE_POINT) {
-		throw InvalidCodeUnit();
+		throw InvalidCodePoint(codePoint);
 	}
 	return codePoint;
 }

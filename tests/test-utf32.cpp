@@ -2,81 +2,59 @@
 using namespace unicode;
 using namespace std;
 
-namespace /*unnamed*/ {
-
-::testing::AssertionResult encodes(const char32_t codePoint) {
-	utf32::Encoder encoder;
-	utf32::CodeUnits codeUnits;
-	utf32::CodeUnitsCount codeUnitsCount = encoder.encode(codePoint, codeUnits);
-	if(codeUnitsCount != 1) {
-		return ::testing::AssertionFailure() << "Encoded to " << codeUnitsCount << " code units";
+class UTF32EncoderTest : public EncoderTest<utf32> {
+protected:
+	void simpleEncodeCheck() override {
+		testEncode(U'\U0001D11E', {U'\U0001D11E'});
 	}
-	utf32::CodeUnit codeUnit = codeUnits[0];
-	if(codeUnit != codePoint) {
-		return ::testing::AssertionFailure() << "Encoded as 0x" << to_hex(codeUnit, 2);
-	}
+};
 
-	utf32::Decoder decoder;
-	char32_t decodedCodePoint = decoder.decode(codeUnit);
-	if(decodedCodePoint != codePoint) {
-		return ::testing::AssertionFailure() << "Decoded as U+" << to_hex(decodedCodePoint, 4);
+class UTF32DecoderTest : public DecoderTest<utf32> {
+protected:
+	void simpleDecodeCheck() override {
+		testDecode(U'\U0001D11E', {U'\U0001D11E'});
 	}
+};
 
-	return ::testing::AssertionSuccess();
+class UTF32Test : public EncodingTest<UTF32EncoderTest, UTF32DecoderTest> {};
+
+TEST_F(UTF32Test, Encoding) {
+#define TEST_CODE_POINT_UTF32_ENCODING(codePoint) TEST_CODE_POINT_ENCODING(codePoint, codePoint)
+	TEST_CODE_POINT_UTF32_ENCODING(U'\x0000');
+	TEST_CODE_POINT_UTF32_ENCODING(U'\u0020');
+	TEST_CODE_POINT_UTF32_ENCODING(U'\u0024');
+	TEST_CODE_POINT_UTF32_ENCODING(U'\u007F');
+	TEST_CODE_POINT_UTF32_ENCODING(U'\u0080');
+	TEST_CODE_POINT_UTF32_ENCODING(U'\u00A2');
+	TEST_CODE_POINT_UTF32_ENCODING(U'\u02AA');
+	TEST_CODE_POINT_UTF32_ENCODING(U'\u07FF');
+	TEST_CODE_POINT_UTF32_ENCODING(U'\u0800');
+	TEST_CODE_POINT_UTF32_ENCODING(U'\u20AC');
+	TEST_CODE_POINT_UTF32_ENCODING(U'\uFEFF');
+	TEST_CODE_POINT_UTF32_ENCODING(U'\uFFFF');
+	TEST_CODE_POINT_UTF32_ENCODING(U'\U00010000');
+	TEST_CODE_POINT_UTF32_ENCODING(U'\U0001D11E');
+	TEST_CODE_POINT_UTF32_ENCODING(U'\U00024B62');
+	TEST_CODE_POINT_UTF32_ENCODING(U'\U0010FFFF');
+#undef TEST_CODE_POINT_UTF32_ENCODING
 }
 
-TEST(UTF32, Encoding) {
-	EXPECT_TRUE(encodes(U'\x0000'));
-	EXPECT_TRUE(encodes(U'\u0020'));
-	EXPECT_TRUE(encodes(U'\u0024'));
-	EXPECT_TRUE(encodes(U'\u007F'));
-	EXPECT_TRUE(encodes(U'\u0080'));
-	EXPECT_TRUE(encodes(U'\u00A2'));
-	EXPECT_TRUE(encodes(U'\u02AA'));
-	EXPECT_TRUE(encodes(U'\u07FF'));
-	EXPECT_TRUE(encodes(U'\u0800'));
-	EXPECT_TRUE(encodes(U'\u20AC'));
-	EXPECT_TRUE(encodes(U'\uFEFF'));
-	EXPECT_TRUE(encodes(U'\uFFFF'));
-	EXPECT_TRUE(encodes(U'\U00010000'));
-	EXPECT_TRUE(encodes(U'\U0001D11E'));
-	EXPECT_TRUE(encodes(U'\U00024B62'));
-	EXPECT_TRUE(encodes(U'\U0010FFFF'));
+TEST_F(UTF32Test, InvalidCodePoints) {
+	TEST_INVALID_CODE_POINT_ENCODE(U'\U00110000');
+	TEST_INVALID_CODE_POINT_ENCODE(U'\U7FFFFFFF');
+	TEST_INVALID_CODE_POINT_ENCODE(U'\x80000000');
+	TEST_INVALID_CODE_POINT_ENCODE(U'\xFFFFFFFF');
+
+#define TEST_INVALID_CODE_POINT_UTF32_DECODE(codePoint) TEST_INVALID_CODE_POINT_DECODE(codePoint, codePoint)
+	TEST_INVALID_CODE_POINT_UTF32_DECODE(U'\U00110000');
+	TEST_INVALID_CODE_POINT_UTF32_DECODE(U'\U7FFFFFFF');
+	TEST_INVALID_CODE_POINT_UTF32_DECODE(U'\x80000000');
+	TEST_INVALID_CODE_POINT_UTF32_DECODE(U'\xFFFFFFFF');
+#undef TEST_INVALID_CODE_POINT_UTF32_DECODE
 }
 
-::testing::AssertionResult failsToEncode(char32_t codePoint) {
-	utf32::Encoder encoder;
-	utf32::CodeUnits codeUnits;
-	try {
-		encoder.encode(codePoint, codeUnits);
-		return ::testing::AssertionFailure() << "Exception not thrown during encode";
-	} catch(utf32::InvalidCodePoint& e) {
-		if(e.codePoint != codePoint) {
-			return ::testing::AssertionFailure() << "Wrong code point in exception: U+" << to_hex(e.codePoint, 4);
-		}
-	}
-
-	utf32::Decoder decoder;
-	utf32::CodeUnit codeUnit = codePoint;
-	try {
-		decoder.decode(codeUnit);
-		return ::testing::AssertionFailure() << "Exception not thrown during decode";
-	} catch(utf32::InvalidCodeUnit& e) {
-		;
-	}
-
-	return ::testing::AssertionSuccess();
-}
-
-TEST(UTF32, InvalidCodePoints) {
-	EXPECT_TRUE(failsToEncode(U'\U00110000'));
-	EXPECT_TRUE(failsToEncode(U'\U7FFFFFFF'));
-	EXPECT_TRUE(failsToEncode(U'\x80000000'));
-	EXPECT_TRUE(failsToEncode(U'\xFFFFFFFF'));
-}
-
-TEST(UTF32, Polymorphic) {
-	using EncodingBase = Encoding<char32_t, 1>;
+TEST_F(UTF32Test, Polymorphic) {
+	using EncodingBase = ::unicode::Encoding<char32_t, 1>;
 
 	utf32::PolymorphicEncoder utf32Encoder;
 	EncodingBase::Encoder* encoder = &utf32Encoder;
@@ -89,6 +67,4 @@ TEST(UTF32, Polymorphic) {
 	utf32::PolymorphicDecoder utf32Decoder;
 	EncodingBase::Decoder* decoder = &utf32Decoder;
 	EXPECT_EQ(U'@', decoder->decode(U'@'));
-}
-
 }
