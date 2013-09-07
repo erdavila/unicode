@@ -4,7 +4,7 @@ using namespace std;
 
 namespace /*unnamed*/ {
 
-::testing::AssertionResult encodes(char32_t codePoint, const vector<byte>& expectedCodeUnits) {
+::testing::AssertionResult encodes(char32_t codePoint, const vector<char>& expectedCodeUnits) {
 	utf8::Encoder encoder;
 	utf8::CodeUnits codeUnits;
 	utf8::CodeUnitsCount codeUnitsCount = encoder.encode(codePoint, codeUnits);
@@ -101,7 +101,7 @@ TEST(UTF8EncoderTest, InvalidCodePoints) {
 }
 
 TEST(UTF8EncoderTest, Polymorphic) {
-	using EncodingBase = Encoding<byte, 4>;
+	using EncodingBase = Encoding<char, 4>;
 	utf8::PolymorphicEncoder utf8Encoder;
 	EncodingBase::Encoder* encoder = &utf8Encoder;
 	EncodingBase::CodeUnits codeUnits;

@@ -13,9 +13,7 @@
 
 namespace unicode {
 
-using byte = unsigned char;
 using CodeUnitsCount = unsigned int;
-
 
 enum : char32_t {
 	MAX_CODE_POINT = U'\U0010FFFF',
@@ -84,8 +82,8 @@ struct Encoding {
 };
 
 
-struct utf8 : public Encoding<byte, 4> {
-	using EncodingBase = Encoding<byte, 4>;
+struct utf8 : public Encoding<char, 4> {
+	using EncodingBase = Encoding<char, 4>;
 
 	class OverlongEncoding : public CodePointException {
 	public:
@@ -129,7 +127,7 @@ struct utf8 : public Encoding<byte, 4> {
 		INVALID
 	};
 
-	static ByteType byteType(CodeUnit codeUnit) noexcept;
+	static ByteType byteType(char b) noexcept;
 };
 
 

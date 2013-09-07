@@ -17,8 +17,8 @@ FILE *fdopen(int fd, const char *mode);
 #include "gtest/gtest.h"
 
 
-struct bytes : std::vector<unicode::byte> {
-	bytes(std::initializer_list<char> lst) : std::vector<unicode::byte>(lst.begin(), lst.end()) {}
+struct bytes : std::vector<char> {
+	bytes(std::initializer_list<char> lst) : std::vector<char>(lst.begin(), lst.end()) {}
 };
 
 inline std::string to_hex(unsigned long value, size_t width) {

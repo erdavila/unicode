@@ -13,12 +13,12 @@ TEST(UTF8DecoderTest, ASCIICodePoints) {
 	EXPECT_EQ(U'\u007F', decoder.decode('\x7F'));
 }
 
-::testing::AssertionResult decodes(const vector<byte>& codeUnits, char32_t expectedCodePoint) {
+::testing::AssertionResult decodes(const vector<char>& codeUnits, char32_t expectedCodePoint) {
 	utf8::Decoder decoder;
 
 	const auto lastIndex = codeUnits.size() - 1;
 	for(auto index = 0u; index <= lastIndex ; index++) {
-		byte codeUnit = codeUnits[index];
+		char codeUnit = codeUnits[index];
 		char32_t codePoint = decoder.decode(codeUnit);
 
 		if(index == lastIndex) {
@@ -83,12 +83,12 @@ TEST(UTF8DecoderTest, CodePointsEncodedToFourBytes) {
 
 
 template <typename ExpectedException>
-::testing::AssertionResult decodedCodePointThrows(const vector<byte>& codeUnits, char32_t codePoint) {
+::testing::AssertionResult decodedCodePointThrows(const vector<char>& codeUnits, char32_t codePoint) {
 	utf8::Decoder decoder;
 
 	auto lastIndex = codeUnits.size() - 1;
 	for(auto index = 0u; index < lastIndex; index++) {
-		byte codeUnit = codeUnits[index];
+		char codeUnit = codeUnits[index];
 		char32_t codePoint = decoder.decode(codeUnit);
 		if(codePoint != utf8::PartiallyDecoded) {
 			return ::testing::AssertionFailure()
@@ -98,7 +98,8 @@ template <typename ExpectedException>
 	}
 
 	try {
-		char32_t codePoint = decoder.decode(codeUnits[lastIndex]);
+		utf8::CodeUnit codeUnit = codeUnits[lastIndex];
+		char32_t codePoint = decoder.decode(codeUnit);
 		return ::testing::AssertionFailure()
 		       << "returned code point U+" << to_hex(codePoint, 4)
 		       << " instead of throwing";
@@ -158,8 +159,9 @@ ostream& operator<<(ostream& os, utf8::ByteType byteType) {
 }
 
 void testByteTypeRange(utf8::ByteType expectedType, int minValue, int maxValue) {
-	for(int b = minValue; b <= maxValue; b++) {
-		EXPECT_EQ(expectedType, utf8::byteType(b)) << "Wrong type for byte '\\x" << to_hex(b, 2) << "'";
+	for(int i = minValue; i <= maxValue; i++) {
+		char b = i;
+		EXPECT_EQ(expectedType, utf8::byteType(b)) << "Wrong type for byte '\\x" << to_hex(i, 2) << "'";
 	}
 }
 
@@ -177,11 +179,11 @@ void simpleCheck(utf8::Decoder& decoder) {
 	EXPECT_EQ(U'@', decoded);
 }
 
-enum : byte {
-	ASCII_BYTE        = 0x00, // 0-------
-	CONTINUATION_BYTE = 0x80, // 10------
-	LEADING3_BYTE     = 0xEF, // 1110----
-	INVALID_BYTE      = 0xFF,
+enum : char {
+	ASCII_BYTE        = '\x00', // 0-------
+	CONTINUATION_BYTE = '\x80', // 10------
+	LEADING3_BYTE     = '\xEF', // 1110----
+	INVALID_BYTE      = '\xFF',
 };
 
 TEST(UTF8DecoderTest, UnexpectedContinuationByte) {
@@ -279,7 +281,7 @@ TEST(UTF8DecoderTest, Reset) {
 
 TEST(UTF8DecoderTest, Polymorphic) {
 	utf8::PolymorphicDecoder utf8Decoder;
-	::unicode::Encoding<byte, 4>::Decoder* decoder = &utf8Decoder;
+	::unicode::Encoding<char, 4>::Decoder* decoder = &utf8Decoder;
 
 	EXPECT_FALSE(decoder->partial());
 

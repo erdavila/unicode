@@ -13,16 +13,16 @@ namespace /*unnamed*/ {
 
 		template <unsigned int N>
 		struct EncodingByte {
-			enum {
-				CODE_UNIT_BITS = N,
-				MASK = ~((~0) << N),               // 8-N bits "0" followed by N bits "1"
-				MARKER = 0xFF & ((~0) << (N + 1)), // 8-N-1 bits "1" followed by N+1 bits "0"
+			enum { CODE_UNIT_BITS = N };
+			enum : char {
+				MASK   = char(~((~0) << N)),             // 8-N bits "0" followed by N bits "1"
+				MARKER = char(0xFF & ((~0) << (N + 1))), // 8-N-1 bits "1" followed by N+1 bits "0"
 			};
-			static bool matches(byte b) {
+			static bool matches(char b) {
 				b &= ~MASK;
 				return b == MARKER;
 			}
-			static char32_t decode(byte codeUnit) {
+			static char32_t decode(char codeUnit) {
 				return codeUnit & MASK;
 			}
 		};
@@ -42,13 +42,13 @@ namespace /*unnamed*/ {
 
 		// 10------
 		struct Continuation : EncodingByte<6> {
-			static byte extractAndEncode(char32_t& codePoint) {
-				byte continuationByte = Continuation::MARKER
+			static char extractAndEncode(char32_t& codePoint) {
+				char continuationByte = Continuation::MARKER
 				        |  (codePoint & Continuation::MASK);
 				codePoint >>= Continuation::CODE_UNIT_BITS;
 				return continuationByte;
 			}
-			static void decodeAndInsert(byte codeUnit, char32_t& codePoint) {
+			static void decodeAndInsert(char codeUnit, char32_t& codePoint) {
 				codePoint <<= Continuation::CODE_UNIT_BITS;
 				codePoint |= Continuation::decode(codeUnit);
 			}
@@ -98,31 +98,31 @@ std::string CodePointException::msg(const char* problem, char32_t codePoint) noe
 }
 
 
-CodeUnitsCount utf8::Encoder::encode(char32_t ch, CodeUnits& codeUnits) {
+CodeUnitsCount utf8::Encoder::encode(char32_t codePoint, CodeUnits& codeUnits) {
 	using namespace utf8_impl;
 
-	byte firstByteMarker;
+	char firstByteMarker;
 	CodeUnitsCount codeUnitsCount;
-	if(ch <= OneByte::MAX_CODE_POINT) {
+	if(codePoint <= OneByte::MAX_CODE_POINT) {
 		codeUnitsCount = 1;
 		firstByteMarker = OneByte::Byte::MARKER;
-	} else if(ch <= TwoBytes::MAX_CODE_POINT) {
+	} else if(codePoint <= TwoBytes::MAX_CODE_POINT) {
 		codeUnitsCount = 2;
 		firstByteMarker = TwoBytes::Leading::MARKER;
-	} else if(ch <= ThreeBytes::MAX_CODE_POINT) {
+	} else if(codePoint <= ThreeBytes::MAX_CODE_POINT) {
 		codeUnitsCount = 3;
 		firstByteMarker = ThreeBytes::Leading::MARKER;
-	} else if(ch <= FourBytes::MAX_CODE_POINT) {
+	} else if(codePoint <= FourBytes::MAX_CODE_POINT) {
 		codeUnitsCount = 4;
 		firstByteMarker = FourBytes::Leading::MARKER;
 	} else {
-		throw InvalidCodePoint(ch);
+		throw InvalidCodePoint(codePoint);
 	}
 
 	for(int i = codeUnitsCount - 1; i > 0; i--) {
-		codeUnits[i] = Continuation::extractAndEncode(ch);
+		codeUnits[i] = Continuation::extractAndEncode(codePoint);
 	}
-	codeUnits[0] = ch | firstByteMarker;
+	codeUnits[0] = codePoint | firstByteMarker;
 
 	return codeUnitsCount;
 }
@@ -187,18 +187,18 @@ void utf8::Decoder::reset() noexcept {
 	state = utf8_impl::NEUTRAL;
 }
 
-auto utf8::byteType(CodeUnit codeUnit) noexcept -> ByteType {
+auto utf8::byteType(char b) noexcept -> ByteType {
 	using namespace utf8_impl;
 
-	if(OneByte::Byte::matches(codeUnit)) {
+	if(OneByte::Byte::matches(b)) {
 		return ByteType::ASCII;
-	} else if(Continuation::matches(codeUnit)) {
+	} else if(Continuation::matches(b)) {
 		return ByteType::CONTINUATION;
-	} else if(TwoBytes::Leading::matches(codeUnit)) {
+	} else if(TwoBytes::Leading::matches(b)) {
 		return ByteType::LEADING2;
-	} else if(ThreeBytes::Leading::matches(codeUnit)) {
+	} else if(ThreeBytes::Leading::matches(b)) {
 		return ByteType::LEADING3;
-	} else if(FourBytes::Leading::matches(codeUnit)  &&  codeUnit <= FourBytes::Leading::MAX_VALUE) {
+	} else if(FourBytes::Leading::matches(b)  &&  (unsigned char)(b) <= FourBytes::Leading::MAX_VALUE) {
 		return ByteType::LEADING4;
 	} else {
 		return ByteType::INVALID;
