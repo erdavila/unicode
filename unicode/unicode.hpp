@@ -272,6 +272,8 @@ struct utf32xe : public Encoding<char, 4> {
 
 using utf32be = utf32xe<BigEndian<char32_t, 4>>;
 
+using utf32le = utf32xe<LittleEndian<char32_t, 4>>;
+
 
 template <typename FromEncoding, typename ToEncoding, typename IStream>
 class InputStream {

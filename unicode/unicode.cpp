@@ -432,6 +432,7 @@ void utf32xe<Endianness>::Decoder::reset() noexcept {
 
 // Force instantiation of templates
 template class utf32xe<BigEndian<char32_t, 4>>;
+template class utf32xe<LittleEndian<char32_t, 4>>;
 
 
 }
