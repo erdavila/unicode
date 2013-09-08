@@ -150,6 +150,28 @@ struct utf32 : public Encoding<char32_t, 1> {
 };
 
 
+struct utf32be : public Encoding<char, 4> {
+	using EncodingBase = Encoding<char, 4>;
+
+	class Encoder {
+	public:
+		CodeUnitsCount encode(char32_t, CodeUnits&);
+	};
+	using PolymorphicEncoder = _polymorphic_encoder_impl<Encoder>;
+
+	class Decoder {
+	public:
+		char32_t decode(CodeUnit);
+		bool partial() const noexcept;
+		void reset() noexcept;
+	private:
+		int count = 0;
+		char32_t decoding = 0;
+	};
+	using PolymorphicDecoder = _polymorphic_decoder_impl<Decoder>;
+};
+
+
 template <typename From, typename To, typename IStream>
 class InputStream {
 public:

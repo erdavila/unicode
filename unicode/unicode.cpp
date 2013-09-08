@@ -227,4 +227,38 @@ bool utf32::Decoder::partial() const noexcept { return false; }
 void utf32::Decoder::reset() noexcept {}
 
 
+CodeUnitsCount utf32be::Encoder::encode(char32_t codePoint, CodeUnits& codeUnits) {
+	if(codePoint > MAX_CODE_POINT) {
+		throw InvalidCodePoint(codePoint);
+	}
+	for(int i = 0; i < 4; i++) {
+		codeUnits[3-i] = codePoint & 0xFF;
+		codePoint >>= 8;
+	}
+	return 4;
+}
+
+char32_t utf32be::Decoder::decode(CodeUnit codeUnit) {
+	char32_t codePoint = PartiallyDecoded;
+	decoding = (decoding << 8) | (codeUnit & 0xFF);
+	if(++count == 4) {
+		codePoint = decoding;
+		decoding = 0;
+		count = 0;
+		if(codePoint > MAX_CODE_POINT) {
+			throw InvalidCodePoint(codePoint);
+		}
+	}
+	return codePoint;
+}
+
+bool utf32be::Decoder::partial() const noexcept {
+	return count != 0;
+}
+
+void utf32be::Decoder::reset() noexcept {
+	count = 0;
+}
+
+
 }
