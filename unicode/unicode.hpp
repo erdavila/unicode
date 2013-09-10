@@ -191,6 +191,30 @@ struct utf32 : public Encoding<char32_t, 1> {
 };
 
 
+template <typename T, size_t NumBytes_, size_t ShiftedBytes(size_t)>
+struct _Endianness {
+	static_assert(sizeof(T) >= NumBytes_, "Required number of bytes must fit in the underlying type");
+	using value_type = T;
+	enum { NumBytes = NumBytes_ };
+	value_type value;
+	explicit constexpr _Endianness(value_type value = value_type()) noexcept : value(value) {}
+	char getByte(size_t index) const;
+	void setByte(size_t index, char byte);
+};
+
+template <size_t NumBytes>
+constexpr size_t _bigEndianShiftedBytes(size_t index) noexcept;
+
+template <size_t NumBytes>
+constexpr size_t _littleEndianShiftedBytes(size_t index) noexcept;
+
+template <typename T, size_t NumBytes_>
+using BigEndian = _Endianness<T, NumBytes_, _bigEndianShiftedBytes<NumBytes_>>;
+
+template <typename T, size_t NumBytes_>
+using LittleEndian = _Endianness<T, NumBytes_, _littleEndianShiftedBytes<NumBytes_>>;
+
+
 struct utf32be : public Encoding<char, 4> {
 	using EncodingBase = Encoding<char, 4>;
 
