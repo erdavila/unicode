@@ -43,6 +43,11 @@ public:
 	InvalidCodeUnit() noexcept : Exception("Invalid code unit") {}
 };
 
+class IncompleteInput : public Exception {
+public:
+	IncompleteInput() noexcept : Exception("Incomplete input") {}
+};
+
 
 template <typename CodeUnit_, unsigned int MaxCodeUnitsPerCodePoint_>
 struct Encoding {
@@ -172,26 +177,38 @@ struct utf32be : public Encoding<char, 4> {
 };
 
 
-template <typename From, typename To, typename IStream>
+template <typename FromEncoding, typename ToEncoding, typename IStream>
 class InputStream {
 public:
-	using InputCodeUnit  = typename From::CodeUnit;
-	using OutputCodeUnit = typename   To::CodeUnit;
+	using InputCodeUnit  = typename FromEncoding::CodeUnit;
+	using OutputCodeUnit = typename   ToEncoding::CodeUnit;
+
+	using char_traits = std::char_traits<OutputCodeUnit>;
+	using CodeUnitOrEof = typename char_traits::int_type;
+
+	enum : CodeUnitOrEof { Eof = char_traits::eof() };
 
 	InputStream(IStream& is) noexcept : is(is) {}
 
-	OutputCodeUnit get();
+	CodeUnitOrEof get();
+	bool eof() const noexcept { return finished; }
 
 private:
+	typename FromEncoding::Decoder decoder;
+	typename ToEncoding::Encoder encoder;
 	IStream& is;
+	bool finished = false;
+	typename ToEncoding::CodeUnits codeUnits;
+	typename ToEncoding::CodeUnitsCount availableCodeUnits = 0;
+	unsigned int nextCodeUnitIndex = 0;
 };
 
 
-template <typename From, typename To, typename OStream>
+template <typename FromEncoding, typename ToEncoding, typename OStream>
 class OutputStream {
 public:
-	using InputCodeUnit  = typename From::CodeUnit;
-	using OutputCodeUnit = typename   To::CodeUnit;
+	using InputCodeUnit  = typename FromEncoding::CodeUnit;
+	using OutputCodeUnit = typename   ToEncoding::CodeUnit;
 
 	OutputStream(OStream& os) noexcept : os(os) {}
 
@@ -202,18 +219,21 @@ private:
 };
 
 
-template <typename From, typename To, typename IStream>
-inline InputStream<From, To, IStream> createInputStream(IStream& is) noexcept {
-	return InputStream<From, To, IStream>(is);
+template <typename FromEncoding, typename ToEncoding, typename IStream>
+inline InputStream<FromEncoding, ToEncoding, IStream> makeInputStream(IStream& is) noexcept {
+	return InputStream<FromEncoding, ToEncoding, IStream>(is);
 }
 
-template <typename From, typename To, typename OStream>
-inline OutputStream<From, To, OStream> createOutputStream(OStream& os) noexcept {
-	return OutputStream<From, To, OStream>(os);
+template <typename FromEncoding, typename ToEncoding, typename OStream>
+inline OutputStream<FromEncoding, ToEncoding, OStream> makeOutputStream(OStream& os) noexcept {
+	return OutputStream<FromEncoding, ToEncoding, OStream>(os);
 }
 
 
 }
+
+
+#include "unicode.inl"
 
 
 #endif /* UNICODE_HPP_ */
