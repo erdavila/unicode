@@ -9,7 +9,7 @@ enum : char16_t {
 };
 
 TEST_F(UTF16DecoderTest, UnexpectedTrailSurrogate) {
-	// At the begging of the decoding
+	// At the beginning of the decoding
 	TEST_DECODE_WITH_FAILURE(utf16::UnexpectedTrailSurrogate, NO_CODE_POINT, TRAIL_SURROGATE);
 
 	// During decoding
@@ -44,6 +44,7 @@ TEST_F(UTF16DecoderTest, Reset) {
 	decoder.reset();
 	EXPECT_FALSE(decoder.partial());
 	EXPECT_THROW(decoder.decode(TRAIL_SURROGATE), utf16::UnexpectedTrailSurrogate);
+	EXPECT_FALSE(decoder.partial());
 
 	SIMPLE_DECODE_CHECK();
 }

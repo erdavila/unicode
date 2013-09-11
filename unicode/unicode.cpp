@@ -8,7 +8,7 @@ namespace /*unnamed*/ {
 	namespace utf8_impl {
 
 		enum DecodeState {
-			NEUTRAL, TWO_BYTES, THREE_BYTES, FOUR_BYTES
+			NEUTRAL = 0, TWO_BYTES, THREE_BYTES, FOUR_BYTES
 		};
 
 		template <unsigned int N>
@@ -116,8 +116,15 @@ namespace /*unnamed*/ {
 		}
 
 		enum DecodeState {
-			NEUTRAL, PENDING_TRAIL_SURROGATE
+			NEUTRAL = 0, PENDING
 		};
+	}
+
+	namespace utf16be_impl {
+		enum DecodeState {
+			NEUTRAL = 0, PENDING
+		};
+
 	}
 }
 
@@ -271,7 +278,7 @@ char32_t utf16::Decoder::decode(CodeUnit codeUnit) {
 	if(state == NEUTRAL) {
 		if(isLeadSurrogate(codeUnit)) {
 			decoding = codeUnit;
-			state = PENDING_TRAIL_SURROGATE;
+			state = PENDING;
 		} else if(isTrailSurrogate(codeUnit)) {
 			throw UnexpectedTrailSurrogate();
 		} else {
@@ -305,6 +312,56 @@ bool utf16::isLeadSurrogate(char16_t codeUnit) noexcept {
 
 bool utf16::isTrailSurrogate(char16_t codeUnit) noexcept {
 	return utf16_impl::TrailSurrogate::matches(codeUnit);
+}
+
+
+CodeUnitsCount utf16be::Encoder::encode(char32_t codePoint, CodeUnits& codeUnits) {
+	utf16::CodeUnits utf16CodeUnits;
+	utf16::Encoder utf16encoder;
+	utf16::CodeUnitsCount utf16CodeUnitsCount = utf16encoder.encode(codePoint, utf16CodeUnits);
+
+	BigEndian<char16_t, 2> endianness { utf16CodeUnits[0] };
+	codeUnits[0] = endianness.getByte(0);
+	codeUnits[1] = endianness.getByte(1);
+
+	if(utf16CodeUnitsCount == 1) {
+		return 2;
+	} else {
+		assert(utf16CodeUnitsCount == 2);
+		endianness.value = utf16CodeUnits[1];
+		codeUnits[2] = endianness.getByte(0);
+		codeUnits[3] = endianness.getByte(1);
+		return 4;
+	}
+}
+
+char32_t utf16be::Decoder::decode(CodeUnit codeUnit) {
+	using namespace utf16be_impl;
+
+	char32_t codePoint = PartiallyDecoded;
+	if(state == NEUTRAL) {
+		decoding = codeUnit;
+		state = PENDING;
+	} else {
+		assert(state == PENDING);
+		BigEndian<char16_t, 2> endianness;
+		endianness.setByte(0, decoding);
+		endianness.setByte(1, codeUnit);
+
+		state = NEUTRAL;
+		codePoint = utf16decoder.decode(endianness.value);
+	}
+
+	return codePoint;
+}
+
+bool utf16be::Decoder::partial() const noexcept {
+	return state != utf16be_impl::NEUTRAL  ||  utf16decoder.partial();
+}
+
+void utf16be::Decoder::reset() noexcept {
+	state = utf16be_impl::NEUTRAL;
+	utf16decoder.reset();
 }
 
 

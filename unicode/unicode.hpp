@@ -172,6 +172,32 @@ struct utf16 : public Encoding<char16_t, 2> {
 };
 
 
+struct utf16be : public Encoding<char, 4> {
+	using EncodingBase = Encoding<char, 4>;
+
+	using UnexpectedTrailSurrogate = utf16::UnexpectedTrailSurrogate;
+	using ExpectedTrailSurrogate = utf16::ExpectedTrailSurrogate;
+
+	class Encoder {
+	public:
+		CodeUnitsCount encode(char32_t, CodeUnits&);
+	};
+	using PolymorphicEncoder = _polymorphic_encoder_impl<Encoder>;
+
+	class Decoder {
+	public:
+		char32_t decode(CodeUnit);
+		bool partial() const noexcept;
+		void reset() noexcept;
+	private:
+		unsigned char state = 0;
+		char decoding;
+		utf16::Decoder utf16decoder;
+	};
+	using PolymorphicDecoder = _polymorphic_decoder_impl<Decoder>;
+};
+
+
 struct utf32 : public Encoding<char32_t, 1> {
 	using EncodingBase = Encoding<char32_t, 1>;
 

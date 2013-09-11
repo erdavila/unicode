@@ -29,7 +29,7 @@ enum : char {
 };
 
 TEST_F(UTF8DecoderTest, UnexpectedContinuationByte) {
-	// At the begging of the decoding
+	// At the beginning of the decoding
 	TEST_DECODE_WITH_FAILURE(utf8::UnexpectedContinuationByte, NO_CODE_POINT, CONTINUATION_BYTE);
 
 	// During decoding
@@ -42,7 +42,7 @@ TEST_F(UTF8DecoderTest, ExpectedContinuationByte) {
 }
 
 TEST_F(UTF8DecoderTest, InvalidByte) {
-	// At the begging of the decoding
+	// At the beginning of the decoding
 	TEST_DECODE_WITH_FAILURE(utf8::InvalidByte, NO_CODE_POINT, INVALID_BYTE);
 
 	// During decoding
