@@ -225,6 +225,8 @@ struct utf16xe : public Encoding<char, 4> {
 
 using utf16be = utf16xe<BigEndian<char16_t, 2>>;
 
+using utf16le = utf16xe<LittleEndian<char16_t, 2>>;
+
 
 struct utf32 : public Encoding<char32_t, 1> {
 	using EncodingBase = Encoding<char32_t, 1>;

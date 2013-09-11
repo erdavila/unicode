@@ -369,6 +369,7 @@ void utf16xe<Endianness>::Decoder::reset() noexcept {
 
 // Force instantiation of templates
 template class utf16xe<BigEndian<char16_t, 2>>;
+template class utf16xe<LittleEndian<char16_t, 2>>;
 
 
 CodeUnitsCount utf32::Encoder::encode(char32_t codePoint, CodeUnits& codeUnits) {
