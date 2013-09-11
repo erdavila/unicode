@@ -231,7 +231,7 @@ struct utf32be : public Encoding<char, 4> {
 		void reset() noexcept;
 	private:
 		int count = 0;
-		char32_t decoding = 0;
+		BigEndian<char32_t, 4> decoding {0};
 	};
 	using PolymorphicDecoder = _polymorphic_decoder_impl<Decoder>;
 };

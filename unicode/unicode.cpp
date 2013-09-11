@@ -318,19 +318,19 @@ CodeUnitsCount utf32be::Encoder::encode(char32_t codePoint, CodeUnits& codeUnits
 	if(codePoint > MAX_CODE_POINT) {
 		throw InvalidCodePoint(codePoint);
 	}
-	for(int i = 0; i < 4; i++) {
-		codeUnits[3-i] = codePoint & 0xFF;
-		codePoint >>= 8;
+	BigEndian<char32_t, MaxCodeUnitsPerCodePoint> bigEndian(codePoint);
+	for(int i = 0; i < MaxCodeUnitsPerCodePoint; i++) {
+		codeUnits[i] = bigEndian.getByte(i);
 	}
-	return 4;
+	return MaxCodeUnitsPerCodePoint;
 }
 
 char32_t utf32be::Decoder::decode(CodeUnit codeUnit) {
 	char32_t codePoint = PartiallyDecoded;
-	decoding = (decoding << 8) | (codeUnit & 0xFF);
+	decoding.setByte(count, codeUnit);
 	if(++count == 4) {
-		codePoint = decoding;
-		decoding = 0;
+		codePoint = decoding.value;
+		decoding.value = 0;
 		count = 0;
 		if(codePoint > MAX_CODE_POINT) {
 			throw InvalidCodePoint(codePoint);
