@@ -120,8 +120,8 @@ struct utf8 : public Encoding<char, 4> {
 		bool partial() const noexcept;
 		void reset() noexcept;
 	private:
-		int state = 0;
-		int pending;
+		unsigned char state = 0;
+		unsigned char pending;
 		char32_t decoding;
 	};
 	using PolymorphicDecoder = _polymorphic_decoder_impl<Decoder>;
@@ -133,6 +133,42 @@ struct utf8 : public Encoding<char, 4> {
 	};
 
 	static ByteType byteType(char b) noexcept;
+};
+
+
+struct utf16 : public Encoding<char16_t, 2> {
+	using EncodingBase = Encoding<char16_t, 2>;
+
+	class UnexpectedTrailSurrogate : public Exception {
+	public:
+		UnexpectedTrailSurrogate() noexcept : Exception("Unexpected trail surrogate") {}
+	};
+
+	class ExpectedTrailSurrogate : public Exception {
+	public:
+		ExpectedTrailSurrogate() noexcept : Exception("Expected trail surrogate") {}
+	};
+
+	class Encoder {
+	public:
+		CodeUnitsCount encode(char32_t, CodeUnits&);
+	};
+	using PolymorphicEncoder = _polymorphic_encoder_impl<Encoder>;
+
+	class Decoder {
+	public:
+		char32_t decode(CodeUnit);
+		bool partial() const noexcept;
+		void reset() noexcept;
+	private:
+		unsigned char state = 0;
+		char16_t decoding;
+	};
+	using PolymorphicDecoder = _polymorphic_decoder_impl<Decoder>;
+
+
+	static bool isLeadSurrogate(char16_t) noexcept;
+	static bool isTrailSurrogate(char16_t) noexcept;
 };
 
 

@@ -81,6 +81,28 @@ namespace /*unnamed*/ {
 			}
 		}
 	}
+
+	namespace utf16_impl {
+		template <char16_t MinValue>
+		struct Surrogate {
+			enum : char16_t {
+				MIN = MinValue,
+				MAX = MinValue + 0x0400 - 1,
+			};
+		};
+
+		using LeadSurrogate  = Surrogate<u'\xD800'>;
+		using TrailSurrogate = Surrogate<u'\xDC00'>;
+
+		template <typename Surrogate>
+		inline bool isSurrogate(char16_t codeUnit) noexcept {
+			return codeUnit >= Surrogate::MIN  &&  codeUnit <= Surrogate::MAX;
+		}
+
+		enum DecodeState {
+			NEUTRAL, PENDING_TRAIL_SURROGATE
+		};
+	}
 }
 
 
@@ -203,6 +225,71 @@ auto utf8::byteType(char b) noexcept -> ByteType {
 	} else {
 		return ByteType::INVALID;
 	}
+}
+
+
+CodeUnitsCount utf16::Encoder::encode(char32_t codePoint, CodeUnits& codeUnits) {
+	if(codePoint > MAX_CODE_POINT) {
+		throw InvalidCodePoint(codePoint);
+	}
+
+	if(codePoint <= 0xFFFF) {
+		codeUnits[0] = codePoint;
+		return 1;
+	} else {
+		codePoint -= 0x010000;
+		CodeUnit trailSurrogate = u'\xDC00' + (codePoint & 0x03FF);
+		CodeUnit leadSurrogate  = u'\xD800' + ((codePoint >> 10) & 0x03FF);
+
+		codeUnits[0] = leadSurrogate;
+		codeUnits[1] = trailSurrogate;
+		return 2;
+	}
+}
+
+char32_t utf16::Decoder::decode(CodeUnit codeUnit) {
+	using namespace utf16_impl;
+
+	char32_t codePoint = PartiallyDecoded;
+	if(state == NEUTRAL) {
+		if(isLeadSurrogate(codeUnit)) {
+			decoding = codeUnit;
+			state = PENDING_TRAIL_SURROGATE;
+		} else if(isTrailSurrogate(codeUnit)) {
+			throw UnexpectedTrailSurrogate();
+		} else {
+			codePoint = codeUnit;
+		}
+	} else {
+		state = NEUTRAL;
+		if(isTrailSurrogate(codeUnit)) {
+			char16_t  leadSurrogate = decoding -  LeadSurrogate::MIN;
+			char16_t trailSurrogate = codeUnit - TrailSurrogate::MIN;
+			codePoint = 0x010000 + (leadSurrogate << 10  |  trailSurrogate);
+		} else {
+			throw ExpectedTrailSurrogate();
+		}
+	}
+
+	return codePoint;
+}
+
+bool utf16::Decoder::partial() const noexcept {
+	return state != utf16_impl::NEUTRAL;
+}
+
+void utf16::Decoder::reset() noexcept {
+	state = utf16_impl::NEUTRAL;
+}
+
+bool utf16::isLeadSurrogate(char16_t codeUnit) noexcept {
+	using namespace utf16_impl;
+	return isSurrogate<LeadSurrogate>(codeUnit);
+}
+
+bool utf16::isTrailSurrogate(char16_t codeUnit) noexcept {
+	using namespace utf16_impl;
+	return isSurrogate<TrailSurrogate>(codeUnit);
 }
 
 

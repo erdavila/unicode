@@ -82,6 +82,7 @@ struct DecoderTest : virtual ::testing::Test {
 
 	template <typename Exception>
 	void testDecodeWithFailure(char32_t codePoint, const std::vector<typename Encoding::CodeUnit>& codeUnits) {
+		assert(!codeUnits.empty());
 		auto lastIndex = codeUnits.size() - 1;
 		for(auto i = 0u; i < lastIndex; i++) {
 			typename Encoding::CodeUnit codeUnit = codeUnits[i];
