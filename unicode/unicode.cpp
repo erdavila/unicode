@@ -120,11 +120,10 @@ namespace /*unnamed*/ {
 		};
 	}
 
-	namespace utf16be_impl {
+	namespace utf16xe_impl {
 		enum DecodeState {
 			NEUTRAL = 0, PENDING
 		};
-
 	}
 }
 
@@ -315,12 +314,13 @@ bool utf16::isTrailSurrogate(char16_t codeUnit) noexcept {
 }
 
 
-CodeUnitsCount utf16be::Encoder::encode(char32_t codePoint, CodeUnits& codeUnits) {
+template <typename Endianness>
+CodeUnitsCount utf16xe<Endianness>::Encoder::encode(char32_t codePoint, CodeUnits& codeUnits) {
 	utf16::CodeUnits utf16CodeUnits;
 	utf16::Encoder utf16encoder;
 	utf16::CodeUnitsCount utf16CodeUnitsCount = utf16encoder.encode(codePoint, utf16CodeUnits);
 
-	BigEndian<char16_t, 2> endianness { utf16CodeUnits[0] };
+	Endianness endianness { utf16CodeUnits[0] };
 	codeUnits[0] = endianness.getByte(0);
 	codeUnits[1] = endianness.getByte(1);
 
@@ -335,8 +335,9 @@ CodeUnitsCount utf16be::Encoder::encode(char32_t codePoint, CodeUnits& codeUnits
 	}
 }
 
-char32_t utf16be::Decoder::decode(CodeUnit codeUnit) {
-	using namespace utf16be_impl;
+template <typename Endianness>
+char32_t utf16xe<Endianness>::Decoder::decode(CodeUnit codeUnit) {
+	using namespace utf16xe_impl;
 
 	char32_t codePoint = PartiallyDecoded;
 	if(state == NEUTRAL) {
@@ -344,7 +345,7 @@ char32_t utf16be::Decoder::decode(CodeUnit codeUnit) {
 		state = PENDING;
 	} else {
 		assert(state == PENDING);
-		BigEndian<char16_t, 2> endianness;
+		Endianness endianness;
 		endianness.setByte(0, decoding);
 		endianness.setByte(1, codeUnit);
 
@@ -355,14 +356,19 @@ char32_t utf16be::Decoder::decode(CodeUnit codeUnit) {
 	return codePoint;
 }
 
-bool utf16be::Decoder::partial() const noexcept {
-	return state != utf16be_impl::NEUTRAL  ||  utf16decoder.partial();
+template <typename Endianness>
+bool utf16xe<Endianness>::Decoder::partial() const noexcept {
+	return state != utf16xe_impl::NEUTRAL  ||  utf16decoder.partial();
 }
 
-void utf16be::Decoder::reset() noexcept {
-	state = utf16be_impl::NEUTRAL;
+template <typename Endianness>
+void utf16xe<Endianness>::Decoder::reset() noexcept {
+	state = utf16xe_impl::NEUTRAL;
 	utf16decoder.reset();
 }
+
+// Force instantiation of template
+template class utf16xe<BigEndian<char16_t, 2>>;
 
 
 CodeUnitsCount utf32::Encoder::encode(char32_t codePoint, CodeUnits& codeUnits) {
