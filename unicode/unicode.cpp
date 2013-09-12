@@ -83,20 +83,36 @@ namespace /*unnamed*/ {
 	}
 
 	namespace utf16_impl {
-		template <char16_t MinValue>
-		struct Surrogate {
-			enum : char16_t {
-				MIN = MinValue,
-				MAX = MinValue + 0x0400 - 1,
-			};
+		enum {
+			NON_BMP_CODE_POINT_OFFSET = 0x010000,
+			SURROGATE_BITS = 10,
+		};
+		enum : char16_t {
+			MAX_BMP_CODE_POINT = u'\xFFFF',
+			SURROGATE_MASK = ~((~0) << SURROGATE_BITS),
 		};
 
-		using LeadSurrogate  = Surrogate<u'\xD800'>;
+		template <char16_t Marker>
+		struct Surrogate {
+			enum : char16_t { MARKER = Marker };
+			static bool matches(char16_t codeUnit) noexcept {
+				return (codeUnit & ~SURROGATE_MASK) == MARKER;
+			}
+		};
+
+		using  LeadSurrogate = Surrogate<u'\xD800'>;
 		using TrailSurrogate = Surrogate<u'\xDC00'>;
 
-		template <typename Surrogate>
-		inline bool isSurrogate(char16_t codeUnit) noexcept {
-			return codeUnit >= Surrogate::MIN  &&  codeUnit <= Surrogate::MAX;
+		inline void encodeToSurrogates(char32_t codePoint, char16_t& leadSurrogate, char16_t& trailSurrogate) noexcept {
+			codePoint -= NON_BMP_CODE_POINT_OFFSET;
+			leadSurrogate  =  LeadSurrogate::MARKER | (codePoint >> SURROGATE_BITS);
+			trailSurrogate = TrailSurrogate::MARKER | (codePoint  & SURROGATE_MASK);
+		}
+
+		inline char32_t decodeFromSurrogates(char16_t leadSurrogate, char16_t trailSurrogate) noexcept {
+			leadSurrogate  &= SURROGATE_MASK;
+			trailSurrogate &= SURROGATE_MASK;
+			return NON_BMP_CODE_POINT_OFFSET + (leadSurrogate << SURROGATE_BITS  |  trailSurrogate);
 		}
 
 		enum DecodeState {
@@ -229,18 +245,19 @@ auto utf8::byteType(char b) noexcept -> ByteType {
 
 
 CodeUnitsCount utf16::Encoder::encode(char32_t codePoint, CodeUnits& codeUnits) {
+	using namespace utf16_impl;
+
 	if(codePoint > MAX_CODE_POINT) {
 		throw InvalidCodePoint(codePoint);
 	}
 
-	if(codePoint <= 0xFFFF) {
+	if(codePoint <= MAX_BMP_CODE_POINT) {
 		codeUnits[0] = codePoint;
 		return 1;
 	} else {
-		codePoint -= 0x010000;
-		CodeUnit trailSurrogate = u'\xDC00' + (codePoint & 0x03FF);
-		CodeUnit leadSurrogate  = u'\xD800' + ((codePoint >> 10) & 0x03FF);
-
+		CodeUnit leadSurrogate;
+		CodeUnit trailSurrogate;
+		encodeToSurrogates(codePoint, leadSurrogate, trailSurrogate);
 		codeUnits[0] = leadSurrogate;
 		codeUnits[1] = trailSurrogate;
 		return 2;
@@ -263,9 +280,9 @@ char32_t utf16::Decoder::decode(CodeUnit codeUnit) {
 	} else {
 		state = NEUTRAL;
 		if(isTrailSurrogate(codeUnit)) {
-			char16_t  leadSurrogate = decoding -  LeadSurrogate::MIN;
-			char16_t trailSurrogate = codeUnit - TrailSurrogate::MIN;
-			codePoint = 0x010000 + (leadSurrogate << 10  |  trailSurrogate);
+			char16_t  leadSurrogate = decoding;
+			char16_t trailSurrogate = codeUnit;
+			codePoint = decodeFromSurrogates(leadSurrogate, trailSurrogate);
 		} else {
 			throw ExpectedTrailSurrogate();
 		}
@@ -283,13 +300,11 @@ void utf16::Decoder::reset() noexcept {
 }
 
 bool utf16::isLeadSurrogate(char16_t codeUnit) noexcept {
-	using namespace utf16_impl;
-	return isSurrogate<LeadSurrogate>(codeUnit);
+	return utf16_impl::LeadSurrogate::matches(codeUnit);
 }
 
 bool utf16::isTrailSurrogate(char16_t codeUnit) noexcept {
-	using namespace utf16_impl;
-	return isSurrogate<TrailSurrogate>(codeUnit);
+	return utf16_impl::TrailSurrogate::matches(codeUnit);
 }
 
 
