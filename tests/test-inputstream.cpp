@@ -6,9 +6,9 @@ using namespace std;
 
 template <typename EncodingFrom, typename EncodingTo>
 void testInputStream(initializer_list<typename EncodingFrom::CodeUnit> inputCodeUnits, initializer_list<typename EncodingTo::CodeUnit> expectedOutputCodeUnits) {
-	basic_istringstream<typename EncodingFrom::CodeUnit> istr(inputCodeUnits);
+	basic_istringstream<typename EncodingFrom::CodeUnit> istrs(inputCodeUnits);
 
-	auto is = makeInputStream<EncodingFrom, EncodingTo>(istr);
+	auto is = makeInputStream<EncodingFrom, EncodingTo>(istrs);
 	ASSERT_FALSE(is.eof());
 
 	using IS = decltype(is);
@@ -55,9 +55,9 @@ TEST(InputStreamFromUTF8ToUTF32BETest, SeveralCodePoints) {
 }
 
 TEST(InputStreamFromUTF8ToUTF32BETest, InvalidCodePoint) {
-	istringstream istr("@\xF4\x90\x80\x80$");
+	istringstream istrs("@\xF4\x90\x80\x80$");
 
-	auto is = makeInputStream<utf8, utf32be>(istr);
+	auto is = makeInputStream<utf8, utf32be>(istrs);
 	ASSERT_FALSE(is.eof());
 
 	using IS = decltype(is);
@@ -116,9 +116,9 @@ TEST(InputStreamFromUTF8ToUTF32BETest, InvalidCodePoint) {
 }
 
 TEST(InputStreamFromUTF8ToUTF32BETest, IncompleteInput) {
-	istringstream istr("@\xE2\x82");
+	istringstream istrs("@\xE2\x82");
 
-	auto is = makeInputStream<utf8, utf32be>(istr);
+	auto is = makeInputStream<utf8, utf32be>(istrs);
 	ASSERT_FALSE(is.eof());
 
 	using IS = decltype(is);
@@ -183,9 +183,9 @@ TEST(InputStreamFromUTF32ToUTF8, SeveralCodePoints) {
 }
 
 TEST(InputStreamFromUTF32ToUTF8, InvalidCodePoint) {
-	basic_istringstream<char32_t> istr(U"@\U00110000$");
+	basic_istringstream<char32_t> istrs(U"@\U00110000$");
 
-	auto is = makeInputStream<utf32, utf8>(istr);
+	auto is = makeInputStream<utf32, utf8>(istrs);
 	ASSERT_FALSE(is.eof());
 
 	using IS = decltype(is);

@@ -46,11 +46,32 @@ inline auto InputStream<FromEncoding, ToEncoding, IStream>::get() -> CodeUnitOrE
 			codePoint = decoder.decode(codeUnit);
 		} while(codePoint == FromEncoding::PartiallyDecoded);
 
+		typename ToEncoding::Encoder encoder;
 		availableCodeUnits = encoder.encode(codePoint, codeUnits);
 		nextCodeUnitIndex = 0;
 	}
 
 	return codeUnits[nextCodeUnitIndex++];
+}
+
+
+template <typename FromEncoding, typename ToEncoding, typename OStream>
+void OutputStream<FromEncoding, ToEncoding, OStream>::put(InputCodeUnit inputCodeUnit) {
+	char32_t codePoint = decoder.decode(inputCodeUnit);
+	if(codePoint != FromEncoding::PartiallyDecoded) {
+		typename ToEncoding::Encoder encoder;
+		typename ToEncoding::CodeUnits outputCodeUnits;
+		typename ToEncoding::CodeUnitsCount outputCodeUnitsCount = encoder.encode(codePoint, outputCodeUnits);
+		for(auto i = 0u; i < outputCodeUnitsCount; i++) {
+			typename ToEncoding::CodeUnit outputCodeUnit = outputCodeUnits[i];
+			os.put(outputCodeUnit);
+		}
+	}
+}
+
+template <typename FromEncoding, typename ToEncoding, typename OStream>
+bool OutputStream<FromEncoding, ToEncoding, OStream>::incompleteInput() const {
+	return decoder.partial();
 }
 
 

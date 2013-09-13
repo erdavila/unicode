@@ -293,7 +293,6 @@ public:
 
 private:
 	typename FromEncoding::Decoder decoder;
-	typename ToEncoding::Encoder encoder;
 	IStream& is;
 	bool finished = false;
 	typename ToEncoding::CodeUnits codeUnits;
@@ -311,8 +310,10 @@ public:
 	OutputStream(OStream& os) noexcept : os(os) {}
 
 	void put(InputCodeUnit);
+	bool incompleteInput() const;
 
 private:
+	typename FromEncoding::Decoder decoder;
 	OStream& os;
 };
 
