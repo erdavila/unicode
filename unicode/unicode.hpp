@@ -245,7 +245,8 @@ struct utf32 : public Encoding<char32_t, 1> {
 };
 
 
-struct utf32be : public Encoding<char, 4> {
+template <typename Endianness>
+struct utf32xe : public Encoding<char, 4> {
 	using EncodingBase = Encoding<char, 4>;
 
 	class Encoder {
@@ -261,10 +262,13 @@ struct utf32be : public Encoding<char, 4> {
 		void reset() noexcept;
 	private:
 		int count = 0;
-		BigEndian<char32_t, 4> decoding {0};
+		Endianness decoding = Endianness(0);
 	};
 	using PolymorphicDecoder = _polymorphic_decoder_impl<Decoder>;
 };
+
+
+using utf32be = utf32xe<BigEndian<char32_t, 4>>;
 
 
 template <typename FromEncoding, typename ToEncoding, typename IStream>

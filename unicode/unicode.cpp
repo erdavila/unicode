@@ -367,7 +367,7 @@ void utf16xe<Endianness>::Decoder::reset() noexcept {
 	utf16decoder.reset();
 }
 
-// Force instantiation of template
+// Force instantiation of templates
 template class utf16xe<BigEndian<char16_t, 2>>;
 
 
@@ -392,18 +392,20 @@ bool utf32::Decoder::partial() const noexcept { return false; }
 void utf32::Decoder::reset() noexcept {}
 
 
-CodeUnitsCount utf32be::Encoder::encode(char32_t codePoint, CodeUnits& codeUnits) {
+template <typename Endianness>
+CodeUnitsCount utf32xe<Endianness>::Encoder::encode(char32_t codePoint, CodeUnits& codeUnits) {
 	if(codePoint > MAX_CODE_POINT) {
 		throw InvalidCodePoint(codePoint);
 	}
-	BigEndian<char32_t, MaxCodeUnitsPerCodePoint> bigEndian(codePoint);
+	Endianness endianness(codePoint);
 	for(int i = 0; i < MaxCodeUnitsPerCodePoint; i++) {
-		codeUnits[i] = bigEndian.getByte(i);
+		codeUnits[i] = endianness.getByte(i);
 	}
 	return MaxCodeUnitsPerCodePoint;
 }
 
-char32_t utf32be::Decoder::decode(CodeUnit codeUnit) {
+template <typename Endianness>
+char32_t utf32xe<Endianness>::Decoder::decode(CodeUnit codeUnit) {
 	char32_t codePoint = PartiallyDecoded;
 	decoding.setByte(count, codeUnit);
 	if(++count == 4) {
@@ -417,13 +419,18 @@ char32_t utf32be::Decoder::decode(CodeUnit codeUnit) {
 	return codePoint;
 }
 
-bool utf32be::Decoder::partial() const noexcept {
+template <typename Endianness>
+bool utf32xe<Endianness>::Decoder::partial() const noexcept {
 	return count != 0;
 }
 
-void utf32be::Decoder::reset() noexcept {
+template <typename Endianness>
+void utf32xe<Endianness>::Decoder::reset() noexcept {
 	count = 0;
 }
+
+// Force instantiation of templates
+template class utf32xe<BigEndian<char32_t, 4>>;
 
 
 }
