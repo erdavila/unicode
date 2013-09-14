@@ -275,6 +275,16 @@ using utf32be = utf32xe<BigEndian<char32_t, 4>>;
 using utf32le = utf32xe<LittleEndian<char32_t, 4>>;
 
 
+enum class DetectedEncoding : int {
+	UTF8,
+	UTF16BE, UTF16LE,
+	UTF32BE, UTF32LE_OR_UTF16LE,
+	NOT_IDENTIFIED
+};
+
+DetectedEncoding detectBOMEncoding(char byte0, char byte1, char byte2, char byte3) noexcept;
+
+
 template <typename FromEncoding, typename ToEncoding, typename IStream>
 class InputStream {
 public:

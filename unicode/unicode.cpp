@@ -435,4 +435,23 @@ template class utf32xe<BigEndian<char32_t, 4>>;
 template class utf32xe<LittleEndian<char32_t, 4>>;
 
 
+DetectedEncoding detectBOMEncoding(char byte0, char byte1, char byte2, char byte3) noexcept {
+	if(byte0 == '\xEF'  &&  byte1 == '\xBB'  &&  byte2 == '\xBF') {
+		return DetectedEncoding::UTF8;
+	} else if(byte0 == '\xFE'  &&  byte1 == '\xFF') {
+		return DetectedEncoding::UTF16BE;
+	} else if(byte0 == '\xFF'  &&  byte1 == '\xFE') {
+		if(byte2 == '\x00'  &&  byte3 == '\x00') {
+			return DetectedEncoding::UTF32LE_OR_UTF16LE;
+		} else {
+			return DetectedEncoding::UTF16LE;
+		}
+	} else if(byte0 == '\x00'  &&  byte1 == '\x00'  &&  byte2 == '\xFE'  &&  byte3 == '\xFF') {
+		return DetectedEncoding::UTF32BE;
+	} else {
+		return DetectedEncoding::NOT_IDENTIFIED;
+	}
+}
+
+
 }
