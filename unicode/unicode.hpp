@@ -7,8 +7,6 @@
 #include <string>
 #include <utility>
 #include <cassert>
-#define NOT_TESTED { assert(!"not tested"); } // TEMPORARY!!!
-#define NOT_IMPLEMENTED { assert(!"not implemented"); } // TEMPORARY!!!
 
 
 namespace unicode {
@@ -240,8 +238,8 @@ struct utf32 : public Encoding<char32_t, 1> {
 	class Decoder {
 	public:
 		char32_t decode(CodeUnit);
-		bool partial() const noexcept;
-		void reset() noexcept;
+		constexpr bool partial() const noexcept { return false; }
+		void reset() noexcept {}
 	};
 	using PolymorphicDecoder = _polymorphic_decoder_impl<Decoder>;
 };
@@ -296,10 +294,10 @@ public:
 
 	enum : CodeUnitOrEof { Eof = char_traits::eof() };
 
-	InputStream(IStream& is) noexcept : is(is) {}
+	constexpr InputStream(IStream& is) noexcept : is(is) {}
 
 	CodeUnitOrEof get();
-	bool eof() const noexcept { return finished; }
+	constexpr bool eof() const noexcept { return finished; }
 
 private:
 	typename FromEncoding::Decoder decoder;
@@ -317,10 +315,10 @@ public:
 	using InputCodeUnit  = typename FromEncoding::CodeUnit;
 	using OutputCodeUnit = typename   ToEncoding::CodeUnit;
 
-	OutputStream(OStream& os) noexcept : os(os) {}
+	constexpr OutputStream(OStream& os) noexcept : os(os) {}
 
 	void put(InputCodeUnit);
-	bool incompleteInput() const;
+	constexpr bool incompleteInput() const noexcept;
 
 private:
 	typename FromEncoding::Decoder decoder;
@@ -329,12 +327,12 @@ private:
 
 
 template <typename FromEncoding, typename ToEncoding, typename IStream>
-inline InputStream<FromEncoding, ToEncoding, IStream> makeInputStream(IStream& is) noexcept {
+inline constexpr InputStream<FromEncoding, ToEncoding, IStream> makeInputStream(IStream& is) noexcept {
 	return InputStream<FromEncoding, ToEncoding, IStream>(is);
 }
 
 template <typename FromEncoding, typename ToEncoding, typename OStream>
-inline OutputStream<FromEncoding, ToEncoding, OStream> makeOutputStream(OStream& os) noexcept {
+inline constexpr OutputStream<FromEncoding, ToEncoding, OStream> makeOutputStream(OStream& os) noexcept {
 	return OutputStream<FromEncoding, ToEncoding, OStream>(os);
 }
 

@@ -70,7 +70,7 @@ void OutputStream<FromEncoding, ToEncoding, OStream>::put(InputCodeUnit inputCod
 }
 
 template <typename FromEncoding, typename ToEncoding, typename OStream>
-bool OutputStream<FromEncoding, ToEncoding, OStream>::incompleteInput() const {
+constexpr bool OutputStream<FromEncoding, ToEncoding, OStream>::incompleteInput() const noexcept {
 	return decoder.partial();
 }
 

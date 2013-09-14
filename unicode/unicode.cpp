@@ -18,11 +18,10 @@ namespace /*unnamed*/ {
 				MASK   = char(~((~0) << N)),             // 8-N bits "0" followed by N bits "1"
 				MARKER = char(0xFF & ((~0) << (N + 1))), // 8-N-1 bits "1" followed by N+1 bits "0"
 			};
-			static bool matches(char b) {
-				b &= ~MASK;
-				return b == MARKER;
+			static inline constexpr bool matches(char b) noexcept {
+				return (b & ~MASK) == MARKER;
 			}
-			static char32_t decode(char codeUnit) {
+			static constexpr char32_t decode(char codeUnit) noexcept {
 				return codeUnit & MASK;
 			}
 		};
@@ -42,13 +41,13 @@ namespace /*unnamed*/ {
 
 		// 10------
 		struct Continuation : EncodingByte<6> {
-			static char extractAndEncode(char32_t& codePoint) {
+			static char extractAndEncode(char32_t& codePoint) noexcept {
 				char continuationByte = Continuation::MARKER
 				        |  (codePoint & Continuation::MASK);
 				codePoint >>= Continuation::CODE_UNIT_BITS;
 				return continuationByte;
 			}
-			static void decodeAndInsert(char codeUnit, char32_t& codePoint) {
+			static void decodeAndInsert(char codeUnit, char32_t& codePoint) noexcept {
 				codePoint <<= Continuation::CODE_UNIT_BITS;
 				codePoint |= Continuation::decode(codeUnit);
 			}
@@ -71,7 +70,7 @@ namespace /*unnamed*/ {
 			};
 		};
 
-		char32_t minCodePoint(int state) {
+		char32_t minCodePoint(int state) noexcept {
 			switch(state) {
 			default:
 			case NEUTRAL:     return    OneByte::MIN_CODE_POINT;
@@ -95,7 +94,7 @@ namespace /*unnamed*/ {
 		template <char16_t Marker>
 		struct Surrogate {
 			enum : char16_t { MARKER = Marker };
-			static bool matches(char16_t codeUnit) noexcept {
+			static constexpr bool matches(char16_t codeUnit) noexcept {
 				return (codeUnit & ~SURROGATE_MASK) == MARKER;
 			}
 		};
@@ -387,10 +386,6 @@ char32_t utf32::Decoder::decode(CodeUnit codeUnit) {
 	}
 	return codePoint;
 }
-
-bool utf32::Decoder::partial() const noexcept { return false; }
-
-void utf32::Decoder::reset() noexcept {}
 
 
 template <typename Endianness>
